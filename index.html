@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>課程管理系統 V38.0 (歷史清單優化版)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* --- V38.0 Zen Wellness 風格 (含歷史紀錄優化) --- */
+        :root {
+            --bg-main: #F9F7F2;       
+            --bg-card: #FFFFFF;       
+            --text-main: #2F3E46;     
+            --text-muted: #889696;    
+            
+            --primary-color: #84A98C; 
+            --primary-hover: #52796F; 
+            
+            --accent-warm: #E6B8A2;   
+            --accent-soft: #CAD2C5;   
+            
+            --border-radius: 20px;    
+            --btn-radius: 50px;       
+            
+            --shadow-soft: 0 10px 25px -5px rgba(82, 121, 111, 0.1); 
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            font-family: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            padding-top: 80px;
+            background-image: radial-gradient(#E8E6E1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        /* 導覽列 */
+        .navbar { 
+            background-color: rgba(255, 255, 255, 0.9) !important; 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            padding: 12px 0;
+        }
+        .navbar-brand { 
+            color: var(--primary-hover) !important; 
+            font-weight: 700; 
+            letter-spacing: 1px;
+            font-size: 1.3rem;
+        }
+        .navbar-brand i { color: var(--primary-color) !important; }
+        
+        .nav-link { color: var(--text-muted) !important; font-weight: 500; margin: 0 5px; transition: all 0.3s; }
+        .nav-link.active { color: var(--primary-color) !important; background-color: #F0F4F1; border-radius: 15px; }
+
+        /* 卡片設計 */
+        .card { 
+            background-color: var(--bg-card); 
+            border: none; 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.3s ease;
+        }
+        .hover-shadow:hover { transform: translateY(-3px); }
+        
+        /* 文字排版 */
+        h4, h5, h6 { color: var(--text-main); font-weight: 700; letter-spacing: 0.5px; }
+        .text-muted { color: var(--text-muted) !important; }
+
+        /* 按鈕 */
+        .btn { border-radius: var(--btn-radius); padding: 8px 24px; font-weight: 600; border: none; letter-spacing: 0.5px; transition: all 0.3s; }
+        .btn-primary { background-color: var(--primary-color); color: #fff; }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .btn-warning { background-color: var(--accent-warm); color: #fff; }
+        .btn-warning:hover { background-color: #d69f85; color: #fff; }
+        .btn-outline-primary { border: 2px solid var(--primary-color); color: var(--primary-color); background: transparent; }
+        .btn-outline-primary:hover { background-color: var(--primary-color); color: white; }
+
+        /* 表單 */
+        .form-control, .form-select { 
+            background-color: #F5F7F6; 
+            border: 2px solid transparent; 
+            border-radius: 15px; 
+            padding: 12px 15px;
+            color: var(--text-main);
+        }
+        .form-control:focus, .form-select:focus { 
+            background-color: #fff; 
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 4px rgba(132, 169, 140, 0.2); 
+        }
+        .input-group-text { background: transparent; border: none; color: var(--primary-color); }
+
+        /* 視圖切換按鈕 */
+        .view-btn { border: 1px solid #eee; background: #fff; color: var(--text-muted); border-radius: 12px; }
+        .view-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+        /* 狀態標籤 */
+        .status-badge { font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+        .bg-active { background-color: #E3E9E5; color: #52796F; }
+        .bg-bone { background-color: #F4ECE8; color: #B5838D; }
+        
+        .progress { background-color: #F0F0F0; border-radius: 10px; height: 10px !important; }
+        
+        /* Modal */
+        .modal-content { border-radius: 25px; border: none; box-shadow: 0 20px 60px rgba(47, 62, 70, 0.15); }
+        .modal-header { padding: 25px 30px 10px; border: none; }
+        .modal-body { padding: 10px 30px 30px; }
+        .modal-footer { padding: 0 30px 30px; border: none; }
+        .modal-title { color: var(--primary-hover); }
+
+        /* V38 修改：歷史紀錄裡的簽名圖縮小 */
+        .history-sig-img { 
+            height: 20px; /* 從30px改為20px，與文字等高 */
+            border: 1px solid #CAD2C5; 
+            border-radius: 4px; 
+            background-color: #fff; 
+            vertical-align: middle;
+        }
+
+        /* 簽名板 */
+        .signature-pad-wrapper {
+            border: 2px dashed #CAD2C5;
+            border-radius: 15px;
+            background-color: #fff;
+            height: 260px;
+            width: 100%;
+        }
+
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        
+        /* 表格 - V38 修改：減少 padding 增加密度 */
+        .table thead th { 
+            border-bottom: 2px solid var(--accent-soft); 
+            color: var(--primary-hover); 
+            font-weight: 600;
+            background-color: transparent;
+            padding: 8px 10px; /* 縮減表頭高度 */
+        }
+        .table td { 
+            border-bottom: 1px solid #f0f0f0; 
+            padding: 8px 10px; /* 縮減內容高度 (原為 15px) */
+            color: var(--text-main); 
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#" onclick="showClientList()">
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V38
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto text-center">
+                <li class="nav-item mt-3 mt-lg-0">
+                    <a class="nav-link active" href="#" onclick="showClientList()">學員列表</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showReportView()">報表統計</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="showSettings()">備份資料</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container" style="max-width: 900px; padding-top: 20px;">
+
+    <div id="viewClientList">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0 text-secondary" style="color: var(--primary-hover) !important;">學員名單</h4>
+            <div class="d-flex gap-2">
+                <button class="btn btn-warning shadow-sm" onclick="openWalkInModal()">
+                    <i class="fa-solid fa-bolt me-2"></i>速記
+                </button>
+                <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                    <i class="fa-solid fa-plus me-2"></i>新增
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-4">
+            <div class="col-8 col-md-9">
+                <div class="card px-3 py-1">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                        <input type="text" class="form-control bg-white border-0 shadow-none" id="clientSearchInput" placeholder="搜尋姓名..." onkeyup="renderClientList()">
+                    </div>
+                </div>
+            </div>
+            <div class="col-4 col-md-3">
+                <div class="btn-group w-100 h-100" role="group">
+                    <button type="button" class="btn view-btn active" id="btnViewGrid" onclick="switchViewMode('grid')"><i class="fa-solid fa-border-all"></i></button>
+                    <button type="button" class="btn view-btn" id="btnViewList" onclick="switchViewMode('list')"><i class="fa-solid fa-list-ul"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="clientListContainer"></div>
+    </div>
+
+    <div id="viewClientDetail" class="d-none">
+        <button class="btn btn-link text-decoration-none text-muted mb-3 ps-0" onclick="showClientList()">
+            <i class="fa-solid fa-arrow-left-long me-2"></i>返回列表
+        </button>
+
+        <div class="card p-4 mb-4" style="background-image: linear-gradient(to right, #ffffff, #fdfbf7);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="d-flex align-items-center mb-1">
+                        <h2 class="fw-bold mb-0 me-3" id="detailName" style="color: var(--primary-hover);">Name</h2>
+                        <button class="btn btn-sm btn-light rounded-circle text-muted" onclick="openEditClientModal()"><i class="fa-solid fa-pen"></i></button>
+                    </div>
+                    <div class="text-muted small mt-3 ps-1">
+                        <div class="mb-2" id="detailPhone"></div>
+                        <div class="mb-2" id="detailBirthday"></div>
+                        <div class="text-danger fw-bold" id="detailEmergency" style="color: #E07A5F !important;"></div>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addContractModal">
+                        <i class="fa-solid fa-file-circle-plus me-1"></i> 合約
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0" style="color: var(--text-muted);">持有方案</h5>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn view-btn active" id="btnContractCard" onclick="switchContractView('card')"><i class="fa-solid fa-id-card"></i></button>
+                <button type="button" class="btn view-btn" id="btnContractList" onclick="switchContractView('list')"><i class="fa-solid fa-bars"></i></button>
+            </div>
+        </div>
+        
+        <div id="contractListContainer"></div>
+    </div>
+
+    <div id="viewReport" class="d-none">
+        <div class="card p-4 mb-4 border-0" style="background-color: var(--primary-color); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div><div class="fs-1 fw-bold" style="color: rgba(255,255,255,0.95);">總預收額</div></div>
+                <div class="text-end"><div class="fs-1 fw-bold" id="reportTotalPrepaid">$0</div></div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0" style="color: var(--primary-hover);">營收統計</h4>
+            <div class="d-flex gap-2">
+                <select id="reportYear" class="form-select form-select-sm" style="width: 90px;" onchange="renderReport()"></select>
+                <select id="reportMonth" class="form-select form-select-sm" style="width: 80px;" onchange="renderReport()">
+                    <option value="all">全年</option>
+                    <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option><option value="4">4月</option>
+                    <option value="5">5月</option><option value="6">6月</option><option value="7">7月</option><option value="8">8月</option>
+                    <option value="9">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h6 class="text-muted small fw-bold mb-4">年度業績趨勢</h6>
+            <div class="chart-container">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="row g-3 mb-3">
+            <div class="col-4"><div class="card p-3 text-center h-100 border-0" style="background: #fff;"><div class="text-muted small mb-1">總營收</div><div class="fw-bold fs-5 text-dark" id="reportTotalRevenue">$0</div></div></div>
+            <div class="col-4"><div class="card p-3 text-center h-100 border-0" style="background: #fff;"><div class="text-muted small mb-1">場租</div><div class="fw-bold fs-5" style="color: #E07A5F;" id="reportTotalVenueCost">$0</div></div></div>
+            <div class="col-4"><div class="card p-3 text-center h-100 border-0" style="background: #fff;"><div class="text-muted small mb-1">淨利</div><div class="fw-bold fs-5" style="color: var(--primary-color);" id="reportNetIncome">$0</div></div></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6"><div class="card p-3 text-center h-100 border-0" style="background-color: #E3E9E5;"><div class="small fw-bold mb-1" style="color: #52796F;">教練課</div><div class="fw-bold fs-5" style="color: #52796F;" id="reportTrainingRev">$0</div></div></div>
+            <div class="col-6"><div class="card p-3 text-center h-100 border-0" style="background-color: #F4ECE8;"><div class="small fw-bold mb-1" style="color: #B5838D;">傳統整復</div><div class="fw-bold fs-5" style="color: #B5838D;" id="reportBoneRev">$0</div></div></div>
+        </div>
+
+        <div class="card p-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 small">
+                    <thead style="background-color: #F0F4F1;"><tr><th class="ps-4 py-3">日期</th><th>學員</th><th>項目</th><th class="text-end">金額</th><th class="text-end pe-4" style="color:#E07A5F">場租</th></tr></thead>
+                    <tbody id="reportTableBody"></tbody>
+                </table>
+            </div>
+            <div id="reportEmptyState" class="text-center text-muted py-5 d-none">無資料</div>
+        </div>
+    </div>
+
+    <div id="viewSettings" class="d-none">
+        <h4 class="mb-4" style="color: var(--primary-hover);">系統設定</h4>
+        
+        <div class="card p-4 mb-4 border-0" style="background-color: #E3E9E5;">
+            <h5 class="fw-bold mb-3" style="color: var(--primary-hover);"><i class="fa-solid fa-copy me-2"></i>文字備份</h5>
+            <p class="text-muted small mb-3">最保險的備份方式，請複製代碼並貼在 Line Keep 保存。</p>
+            <button class="btn btn-primary w-100 py-2 mb-2" onclick="copyDataToClipboard()">複製代碼</button>
+            <small class="text-muted d-block text-center" id="copyStatus"></small>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h5 class="fw-bold mb-3" style="color: var(--text-main);"><i class="fa-solid fa-file-export me-2"></i>檔案備份</h5>
+            <button class="btn btn-outline-dark w-100 rounded-pill" onclick="exportData()">下載 .json 檔案</button>
+        </div>
+
+        <div class="card p-4 mb-4 border-0" style="background-color: #fff; border: 1px dashed #ccc !important;">
+            <h5 class="fw-bold text-muted mb-3"><i class="fa-solid fa-rotate-left me-2"></i>資料還原</h5>
+            <textarea class="form-control mb-3 bg-light border-0" id="restoreTextInput" rows="3" placeholder="在此貼上備份代碼..."></textarea>
+            <button class="btn btn-secondary w-100 mb-3" onclick="restoreFromText()">確認還原</button>
+            <div class="text-center text-muted small mb-3">- 或 -</div>
+            <input type="file" class="form-control mb-3" id="importFile" accept=".json">
+            <button class="btn btn-outline-secondary w-100 btn-sm rounded-pill" onclick="importData()">讀取檔案</button>
+        </div>
+        
+        <div class="text-center mt-5">
+            <button class="btn btn-link text-danger text-decoration-none btn-sm" onclick="resetSystem()">重置所有資料</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal fade" id="addClientModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">新增學員</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label text-muted small">姓名</label><input type="text" class="form-control" id="newClientName"></div>
+    <div class="mb-3"><label class="form-label text-muted small">電話</label><input type="text" class="form-control" id="newClientPhone" type="tel"></div>
+    <div class="mb-3"><label class="form-label text-muted small">生日</label><input type="date" class="form-control" id="newClientBirthday"></div>
+    <hr class="my-4 border-light">
+    <div class="mb-3"><label class="form-label text-muted small">緊急聯絡人</label><input type="text" class="form-control" id="newClientEmergencyName"></div>
+    <div class="mb-3"><label class="form-label text-muted small">緊急聯絡電話</label><input type="tel" class="form-control" id="newClientEmergencyPhone"></div>
+</div><div class="modal-footer"><button type="button" class="btn btn-primary w-100 py-2" onclick="addNewClient()">建立</button></div></div></div></div>
+
+<div class="modal fade" id="editClientModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">編輯資料</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label text-muted small">姓名</label><input type="text" class="form-control" id="editClientName"></div>
+    <div class="mb-3"><label class="form-label text-muted small">電話</label><input type="text" class="form-control" id="editClientPhone" type="tel"></div>
+    <div class="mb-3"><label class="form-label text-muted small">生日</label><input type="date" class="form-control" id="editClientBirthday"></div>
+    <hr class="my-4 border-light">
+    <div class="mb-3"><label class="form-label text-muted small">緊急聯絡人</label><input type="text" class="form-control" id="editClientEmergencyName"></div>
+    <div class="mb-3"><label class="form-label text-muted small">緊急聯絡電話</label><input type="tel" class="form-control" id="editClientEmergencyPhone"></div>
+</div><div class="modal-footer d-flex justify-content-between"><button type="button" class="btn btn-link text-danger text-decoration-none" onclick="deleteCurrentClient()">刪除</button><button type="button" class="btn btn-primary px-4" onclick="saveClientUpdates()">儲存</button></div></div></div></div>
+
+<div class="modal fade" id="addContractModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">新增方案</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label fw-bold" style="color: var(--primary-hover);">服務類型</label><select class="form-select" id="newContractType"><option value="course" selected>教練課程</option><option value="bone">傳統整復</option></select></div>
+    <div class="mb-3"><label class="form-label text-muted small">方案名稱</label><input type="text" class="form-control" id="newContractTitle" placeholder="例如：10堂整復調理"></div>
+    <div class="mb-3"><label class="form-label text-muted small">購買日期</label><input type="date" class="form-control" id="newContractDate"></div>
+    <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">總堂數/次數</label><input type="number" class="form-control" id="newContractSessions" inputmode="numeric"></div><div class="col-6 mb-3"><label class="form-label text-muted small">總金額</label><input type="number" class="form-control" id="newContractPrice" inputmode="numeric"></div></div>
+</div><div class="modal-footer"><button type="button" class="btn btn-primary w-100 py-2" onclick="addNewContract()">建立</button></div></div></div></div>
+
+<div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">歷史紀錄</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><div class="table-responsive"><table class="table table-striped mb-0 align-middle"><thead class="table-light"><tr><th class="ps-4 py-3">時間</th><th>簽名</th><th class="text-end">營收</th><th class="text-end pe-4">操作</th></tr></thead><tbody id="historyTableBody"></tbody></table></div><div id="historyEmptyState" class="text-center py-5 text-muted d-none">無紀錄</div></div></div></div></div>
+
+<div class="modal fade" id="checkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" style="color: var(--primary-hover);">確認扣課</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2">
+    <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="checkInDate"></div>
+    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder="例如：200"></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
+
+<div class="modal fade" id="walkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning text-white"><h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-bolt me-2"></i>單次速記</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label fw-bold text-dark">服務類型</label><select class="form-select" id="walkInType"><option value="course" selected>教練課程</option><option value="bone">傳統整復</option></select></div>
+    <div class="mb-3"><label class="form-label text-muted small">學員姓名</label><input type="text" class="form-control" id="walkInName" list="clientSuggestions" placeholder="輸入或選擇..."><datalist id="clientSuggestions"></datalist></div>
+    <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">收費金額</label><input type="number" class="form-control" id="walkInPrice"></div><div class="col-6 mb-3"><label class="form-label text-muted small text-danger">場租支出</label><input type="number" class="form-control" id="walkInVenue"></div></div>
+    <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="walkInDate"></div>
+    <p class="mb-2 small text-muted">簽名確認</p><div class="signature-pad-wrapper mb-2" style="height: 260px;"><canvas id="walkInCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearWalkInSig()">重新簽名</button>
+</div><div class="modal-footer border-0"><button type="button" class="btn btn-warning w-100 py-2 text-white" onclick="submitWalkIn()">完成紀錄</button></div></div></div></div>
+
+<div class="modal fade" id="editLogModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-info border-3"><div class="modal-header bg-info-subtle"><h5 class="modal-title fw-bold text-dark">編輯紀錄</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="datetime-local" class="form-control" id="editLogDate"></div>
+    <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">扣款金額</label><input type="number" class="form-control" id="editLogAmount"></div><div class="col-6 mb-3"><label class="form-label text-muted small">場租支出</label><input type="number" class="form-control" id="editLogVenueCost"></div></div>
+    <div class="alert alert-light small py-2 mb-2 text-warning border-0"><i class="fa-solid fa-circle-exclamation me-1"></i>修改金額將自動調整合約餘額。</div>
+    <p class="mb-2 small text-muted">重簽名 (選填)</p><div class="signature-pad-wrapper mb-2" style="height: 260px;"><canvas id="editLogCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearEditLogSig()">重新簽名</button>
+</div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitEditLog()">儲存變更</button></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+<script>
+    const DB_KEY = 'coach_system_production_data';
+    let db = { clients: [] };
+    let currentClientId = null, currentContractId = null;
+    let editingContractId = null, editingLogIndex = null;
+    let signaturePad = null, walkInPad = null, editLogPad = null;
+    let revenueChart = null;
+    let viewMode = 'grid', contractViewMode = 'card';
+    let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        Chart.defaults.color = '#889696';
+        Chart.defaults.borderColor = '#E8E6E1';
+        Chart.defaults.font.family = '"Noto Sans TC", -apple-system, sans-serif';
+
+        migrateOldData();
+        loadData();
+        
+        addClientModal = new bootstrap.Modal(document.getElementById('addClientModal'));
+        editClientModal = new bootstrap.Modal(document.getElementById('editClientModal'));
+        addContractModal = new bootstrap.Modal(document.getElementById('addContractModal'));
+        checkInModal = new bootstrap.Modal(document.getElementById('checkInModal'));
+        historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
+        walkInModal = new bootstrap.Modal(document.getElementById('walkInModal'));
+        editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
+
+        signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
+        walkInPad = new SignaturePad(document.getElementById('walkInCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
+        editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
+
+        window.addEventListener('resize', resizeCanvas);
+        document.getElementById('checkInModal').addEventListener('shown.bs.modal', resizeCanvas);
+        document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
+        document.getElementById('walkInModal').addEventListener('shown.bs.modal', resizeWalkInCanvas);
+        document.getElementById('walkInModal').addEventListener('hidden.bs.modal', () => { walkInPad.clear(); });
+        document.getElementById('editLogModal').addEventListener('shown.bs.modal', resizeEditLogCanvas);
+        document.getElementById('editLogModal').addEventListener('hidden.bs.modal', () => { editLogPad.clear(); });
+
+        document.getElementById('addContractModal').addEventListener('show.bs.modal', function () {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('newContractDate').value = today;
+        });
+
+        initYearOptions();
+        renderClientList();
+    });
+
+    // ... (All JS Logic preserved identically) ...
+    function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
+    function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
+
+    function renderClientList() {
+        const div = document.getElementById('clientListContainer'); div.innerHTML = '';
+        const filterText = document.getElementById('clientSearchInput').value.toLowerCase().trim();
+        const filteredClients = db.clients.filter(c => c.name.toLowerCase().includes(filterText) || (c.phone && c.phone.includes(filterText)));
+        if (filteredClients.length === 0) { div.innerHTML = `<div class="col-12 text-center text-muted py-5">查無資料</div>`; return; }
+        if (viewMode === 'grid') {
+            div.className = "row g-3";
+            filteredClients.forEach(c => {
+                const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
+                // V30: Removed avatar div
+                div.innerHTML += `<div class="col-12 col-md-6"><div class="card p-4 hover-shadow" onclick="showClientDetail(${c.id})" style="cursor:pointer"><div><h5 class="mb-1" style="color:var(--primary-hover)">${c.name}</h5><small class="text-muted">剩餘 ${remain} 堂/次</small></div><div class="ms-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.8rem; color: #CAD2C5"></i></div></div></div>`;
+            });
+        } else {
+            div.className = "";
+            let tableHtml = `<div class="card overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead style="background-color:#F0F4F1"><tr><th class="ps-4 py-3" style="color:var(--primary-hover)">學員</th><th class="text-end pe-4" style="color:var(--primary-hover)">剩餘堂數</th></tr></thead><tbody>`;
+            filteredClients.forEach(c => {
+                const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
+                const badgeClass = remain > 0 ? 'bg-active' : 'bg-light text-muted';
+                // V30: Removed list-avatar span
+                tableHtml += `<tr class="cursor-pointer" onclick="showClientDetail(${c.id})"><td class="ps-4"><span class="fw-bold" style="color:var(--text-main)">${c.name}</span></td><td class="text-end pe-4"><span class="status-badge ${badgeClass}">${remain}</span></td></tr>`;
+            });
+            tableHtml += `</tbody></table></div></div>`;
+            div.innerHTML = tableHtml;
+        }
+    }
+
+    function initYearOptions() { const s = document.getElementById('reportYear'); const c = new Date().getFullYear(); s.innerHTML = ''; for (let y = 2025; y <= c + 3; y++) { const o = document.createElement('option'); o.value = y; o.text = y; if(y===c) o.selected=true; s.appendChild(o); } }
+    function loadData() { const s = localStorage.getItem(DB_KEY); if (s) db = JSON.parse(s); else if (db.clients.length === 0) { db.clients.push({ id: Date.now(), name: "範例學員", phone: "", contracts: [] }); saveData(); } }
+    function saveData() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+    function migrateOldData() { if (!localStorage.getItem(DB_KEY)) { const v4 = localStorage.getItem('gym_system_v4'); const v3 = localStorage.getItem('gym_system_v3'); if(v4) localStorage.setItem(DB_KEY, v4); else if(v3) localStorage.setItem(DB_KEY, v3); } }
+    function hideAll() { ['viewClientList','viewClientDetail','viewReport','viewSettings'].forEach(id => document.getElementById(id).classList.add('d-none')); document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active')); }
+    function showClientList() { hideAll(); document.getElementById('viewClientList').classList.remove('d-none'); document.querySelectorAll('.nav-link')[0].classList.add('active'); renderClientList(); }
+    function showReportView() { hideAll(); document.getElementById('viewReport').classList.remove('d-none'); document.querySelectorAll('.nav-link')[1].classList.add('active'); renderReport(); }
+    function showSettings() { hideAll(); document.getElementById('viewSettings').classList.remove('d-none'); document.querySelectorAll('.nav-link')[2].classList.add('active'); }
+
+    function showClientDetail(id) {
+        hideAll(); currentClientId = id;
+        const c = db.clients.find(x => x.id === id); if(!c) return showClientList();
+        
+        document.getElementById('detailName').innerText = c.name; 
+        const phoneElem = document.getElementById('detailPhone');
+        if (c.phone) { phoneElem.innerHTML = `<i class="fa-solid fa-phone me-2"></i>電話：${c.phone}`; phoneElem.classList.remove('d-none'); } else { phoneElem.classList.add('d-none'); }
+        
+        const be = document.getElementById('detailBirthday'); if(c.birthday){be.innerHTML=`<i class="fa-solid fa-cake-candles me-2"></i>生日：${c.birthday}`;be.classList.remove('d-none');}else{be.classList.add('d-none');}
+        const ee = document.getElementById('detailEmergency'); if(c.emergencyName||c.emergencyPhone){ee.innerHTML=`<i class="fa-solid fa-triangle-exclamation me-2"></i>緊急聯絡：${c.emergencyName||''} ${c.emergencyPhone?'('+c.emergencyPhone+')':''}`;ee.classList.remove('d-none');}else{ee.classList.add('d-none');}
+        document.getElementById('viewClientDetail').classList.remove('d-none'); renderContracts(c);
+    }
+
+    function renderContracts(c) {
+        const div = document.getElementById('contractListContainer'); div.innerHTML = '';
+        if(c.contracts.length===0) return div.innerHTML = '<div class="text-center text-muted my-5">尚無合約</div>';
+        
+        if (contractViewMode === 'list') {
+            let table = `<div class="card overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead style="background-color:#F0F4F1"><tr><th class="ps-4">方案</th><th>進度</th><th>餘額</th><th class="text-end pe-4">操作</th></tr></thead><tbody>`;
+            c.contracts.forEach(con => {
+                const active = con.remainingSessions > 0;
+                const type = con.type || 'course';
+                const badge = type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`;
+                const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : badge;
+                table += `<tr><td class="ps-4">${status} <span class="fw-bold ms-1" style="font-size:0.9rem">${con.title}</span><div class="small text-muted mt-1">${con.purchaseDate?'<i class="fa-regular fa-calendar me-1"></i>'+con.purchaseDate:''}</div></td><td>${con.remainingSessions} / ${con.totalSessions}</td><td class="small fw-bold">$${con.remainingBalance.toLocaleString()}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openCheckIn(${con.id})" title="扣課" ${!active?'disabled':''}><i class="fa-solid fa-pen-nib text-primary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left text-muted"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="delContract(${con.id})" title="刪除"><i class="fa-solid fa-trash-can text-danger"></i></button></td></tr>`;
+            });
+            table += `</tbody></table></div></div>`;
+            div.innerHTML = table;
+        } else {
+            c.contracts.forEach(con => {
+                const active = con.remainingSessions > 0;
+                const per = con.totalSessions > 0 ? ((con.totalSessions - con.remainingSessions)/con.totalSessions)*100 : 100;
+                const type = con.type || 'course';
+                const badge = type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`;
+                const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
+                const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
+                const progressColor = type==='bone'?'#B5838D':'#52796F';
+
+                div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
+            });
+        }
+    }
+
+    function openHistory(contractId) {
+        currentContractId = contractId; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === contractId); const tbody = document.getElementById('historyTableBody'); tbody.innerHTML = '';
+        if (!con.logs || con.logs.length === 0) { document.getElementById('historyEmptyState').classList.remove('d-none'); } 
+        else {
+            document.getElementById('historyEmptyState').classList.add('d-none');
+            con.logs.forEach((log, index) => {
+                const sigDisplay = log.signature ? `<img src="${log.signature}" class="history-sig-img" style="border-color:#eee">` : '<span class="text-muted small">-</span>';
+                tbody.innerHTML += `<tr><td class="ps-4 small text-muted">${log.date}</td><td class="text-center">${sigDisplay}</td><td class="text-end fw-bold" style="color:var(--primary-hover)">+$${log.amount}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle text-primary ms-1" onclick="openEditLog(${index})"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-light rounded-circle text-danger ms-1" onclick="deleteLog(${index})"><i class="fa-solid fa-trash-can"></i></button></td></tr>`;
+            });
+        }
+        historyModal.show();
+    }
+
+    function deleteLog(index) {
+        if(!confirm('⚠️ 確定刪除此紀錄？\n\n系統將自動「歸還」扣除的堂數與金額。')) return;
+        const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
+        con.remainingSessions += 1; con.remainingBalance += parseInt(log.amount); con.logs.splice(index, 1);
+        saveData(); renderContracts(c); openHistory(currentContractId); alert('已刪除');
+    }
+
+    function openEditLog(index) {
+        editingLogIndex = index; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
+        const parts = log.date.split(' '); const ymd = parts[0].replace(/\//g, '-'); const hm = parts[1]; document.getElementById('editLogDate').value = `${ymd}T${hm}`;
+        document.getElementById('editLogAmount').value = log.amount; document.getElementById('editLogVenueCost').value = log.venueCost || 0;
+        editLogModal.show();
+    }
+
+    function submitEditLog() {
+        const dateInput = document.getElementById('editLogDate').value; const newAmount = parseInt(document.getElementById('editLogAmount').value); const newVenue = parseInt(document.getElementById('editLogVenueCost').value) || 0;
+        if(!dateInput || isNaN(newAmount)) return alert("資料錯誤");
+        const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[editingLogIndex];
+        con.remainingBalance += (parseInt(log.amount) - newAmount);
+        const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
+        if (!editLogPad.isEmpty()) log.signature = editLogPad.toDataURL();
+        saveData(); renderContracts(c); editLogModal.hide(); openHistory(currentContractId); alert('完成');
+    }
+
+    function resizeCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('signatureCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); signaturePad.clear(); }
+    function resizeWalkInCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('walkInCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); walkInPad.clear(); }
+    function resizeEditLogCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('editLogCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); editLogPad.clear(); }
+    function clearSignature() { signaturePad.clear(); }
+    function clearWalkInSig() { walkInPad.clear(); }
+    function clearEditLogSig() { editLogPad.clear(); }
+
+    function renderTrendChart(year, data) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+        const trainData = new Array(12).fill(0); const boneData = new Array(12).fill(0);
+        db.clients.forEach(c => { c.contracts.forEach(con => { const type = con.type || 'course'; con.logs.forEach(log => { const d = new Date(log.date); if (d.getFullYear() == year) { const month = d.getMonth(); if (type === 'bone') { boneData[month] += parseInt(log.amount); } else { trainData[month] += parseInt(log.amount); } } }); }); });
+        if (revenueChart) { revenueChart.destroy(); }
+        
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '教練課程', data: trainData, borderColor: '#52796F', backgroundColor: '#52796F', tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2 },
+                    { label: '傳統整復', data: boneData, borderColor: '#B5838D', backgroundColor: '#B5838D', tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#E8E6E1', drawBorder: false }, ticks: { color: '#889696' } }, x: { grid: { display: false }, ticks: { color: '#889696' } } }, interaction: { mode: 'index', intersect: false, },
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 0, padding: 20, usePointStyle: true, font: { family: '"Noto Sans TC"' }, generateLabels: (chart) => { const original = Chart.defaults.plugins.legend.labels.generateLabels(chart); original.forEach(label => { label.boxWidth = 0; label.fillStyle = 'rgba(0,0,0,0)'; label.strokeStyle = 'rgba(0,0,0,0)'; label.lineWidth = 0; }); return original; } } } }
+            }
+        });
+    }
+
+    function renderReport() {
+        const y = document.getElementById('reportYear').value; const m = document.getElementById('reportMonth').value; const tbody = document.getElementById('reportTableBody'); tbody.innerHTML = '';
+        let tRev=0, tVenue=0, trRev=0, boRev=0, recs=[];
+        renderTrendChart(y);
+        db.clients.forEach(c => c.contracts.forEach(con => con.logs.forEach(l => {
+            const d = new Date(l.date);
+            if(d.getFullYear()==y && (m==='all'||d.getMonth()+1==m)) {
+                tRev+=l.amount; tVenue+=(l.venueCost||0);
+                const type = con.type || 'course'; if(type==='bone') boRev+=l.amount; else trRev+=l.amount;
+                recs.push({d:l.date, n:c.name, a:l.amount, vc:l.venueCost||0, type:type});
+            }
+        })));
+        document.getElementById('reportTotalRevenue').innerText = '$'+tRev.toLocaleString();
+        document.getElementById('reportTotalVenueCost').innerText = '$'+tVenue.toLocaleString();
+        document.getElementById('reportNetIncome').innerText = '$'+(tRev-tVenue).toLocaleString();
+        document.getElementById('reportTrainingRev').innerText = '$'+trRev.toLocaleString();
+        document.getElementById('reportBoneRev').innerText = '$'+boRev.toLocaleString();
+        
+        let tPre=0; db.clients.forEach(c=>c.contracts.forEach(con=>{if(con.remainingBalance>0) tPre+=con.remainingBalance;}));
+        document.getElementById('reportTotalPrepaid').innerText = '$'+tPre.toLocaleString();
+
+        if(recs.length===0) document.getElementById('reportEmptyState').classList.remove('d-none');
+        else {
+            document.getElementById('reportEmptyState').classList.add('d-none');
+            recs.sort((a,b)=>new Date(b.d)-new Date(a.d)).forEach(r => {
+                const itemText = r.type === 'bone' ? '<span style="color:#B5838D;font-weight:600">傳統整復</span>' : '<span style="color:#52796F;font-weight:600">教練課程</span>';
+                const dateOnly = r.d.split(' ')[0];
+                tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc>0?'-$'+r.vc:'-'}</td></tr>`;
+            });
+        }
+    }
+
+    // Actions
+    function addNewClient() { const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); saveData(); renderClientList(); addClientModal.hide(); } }
+    function addNewContract() { const t=document.getElementById('newContractTitle').value, s=+document.getElementById('newContractSessions').value, p=+document.getElementById('newContractPrice').value, type=document.getElementById('newContractType').value, date=document.getElementById('newContractDate').value; if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); saveData(); renderContracts(c); addContractModal.hide(); } else { alert("請填寫完整"); } }
+    
+    // V37: Open CheckIn Modal with Date ONLY (auto set to today)
+    function openCheckIn(id) { 
+        currentContractId=id; 
+        const c=db.clients.find(x=>x.id===currentClientId); 
+        const con=c.contracts.find(x=>x.id===id); 
+        document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
+        
+        // V37: Set input type=date to today
+        document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('checkInVenueCost').value=''; 
+        checkInModal.show(); 
+    }
+    
+    // V37: Submit CheckIn with Date ONLY (append current time for sorting)
+    function submitCheckIn() { 
+        if(signaturePad.isEmpty()) return alert('請簽名'); 
+        const dIn=document.getElementById('checkInDate').value; 
+        if(!dIn) return alert('選日期'); 
+        
+        const c=db.clients.find(x=>x.id===currentClientId); 
+        const con=c.contracts.find(x=>x.id===currentContractId); 
+        
+        // V37: Auto append current HH:MM
+        const now = new Date();
+        const dateParts = dIn.split('-'); // [YYYY, MM, DD]
+        const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        
+        con.remainingSessions--; 
+        con.remainingBalance-=con.unitPrice; 
+        con.logs.unshift({date:dStr, amount:con.unitPrice, venueCost:parseInt(document.getElementById('checkInVenueCost').value)||0, signature:signaturePad.toDataURL()}); 
+        
+        saveData(); renderContracts(c); checkInModal.hide(); alert('成功'); 
+    }
+    
+    function openWalkInModal() { 
+        document.getElementById('walkInDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('walkInName').value=''; document.getElementById('walkInPrice').value=''; document.getElementById('walkInVenue').value=''; const dl=document.getElementById('clientSuggestions'); dl.innerHTML=''; db.clients.forEach(c=>{const o=document.createElement('option'); o.value=c.name; dl.appendChild(o);}); walkInModal.show(); 
+    }
+    
+    function submitWalkIn() { 
+        const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
+        if(!n||!p||!dIn) return alert('資料不全'); 
+        if(walkInPad.isEmpty()) return alert('請簽名'); 
+        const dateParts = dIn.split('-');
+        const now = new Date();
+        const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        const dateForTitle = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`;
+        let c=db.clients.find(x=>x.name===n); 
+        if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
+        const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
+        const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:walkInPad.toDataURL()}]}; 
+        c.contracts.unshift(con); saveData(); renderClientList(); walkInModal.hide(); alert('完成'); 
+    }
+
+    function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); saveData(); renderContracts(c); } }
+    function resetSystem() { if(confirm('清除所有資料?')) { localStorage.removeItem(DB_KEY); location.reload(); } }
+    function copyDataToClipboard() { navigator.clipboard.writeText(JSON.stringify(db)).then(()=>alert('複製成功')).catch(()=>alert('失敗')); }
+    function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(db)); a.download="backup.json"; a.click(); }
+    function restoreFromText() { try { const d=JSON.parse(document.getElementById('restoreTextInput').value); if(d.clients && confirm('還原?')) { db=d; saveData(); location.reload(); } } catch(e){alert('代碼錯');} }
+    function importData() { const f=document.getElementById('importFile').files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{db=JSON.parse(e.target.result); saveData(); location.reload();}catch(x){alert('錯誤');}}; r.readAsText(f); }
+    function openEditClientModal() { const c=db.clients.find(x=>x.id===currentClientId); document.getElementById('editClientName').value=c.name; document.getElementById('editClientPhone').value=c.phone; document.getElementById('editClientBirthday').value=c.birthday||''; document.getElementById('editClientEmergencyName').value=c.emergencyName||''; document.getElementById('editClientEmergencyPhone').value=c.emergencyPhone||''; editClientModal.show(); }
+    function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
+    function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); saveData(); editClientModal.hide(); showClientList(); } }
+</script>
+</body>
+</html>
