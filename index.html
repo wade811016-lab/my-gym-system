@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V38.0 (歷史清單優化版)</title>
+    <title>課程管理系統 V39.0 (電腦修復版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V38.0 Zen Wellness 風格 (含歷史紀錄優化) --- */
+        /* --- V39.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -113,37 +113,48 @@
         .modal-footer { padding: 0 30px 30px; border: none; }
         .modal-title { color: var(--primary-hover); }
 
-        /* V38 修改：歷史紀錄裡的簽名圖縮小 */
+        /* 歷史紀錄裡的簽名圖 */
         .history-sig-img { 
-            height: 20px; /* 從30px改為20px，與文字等高 */
+            height: 20px; 
             border: 1px solid #CAD2C5; 
             border-radius: 4px; 
             background-color: #fff; 
             vertical-align: middle;
         }
 
-        /* 簽名板 */
+        /* V39 修復：簽名板容器與Canvas樣式 */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
             background-color: #fff;
             height: 260px;
             width: 100%;
+            position: relative; /* 關鍵：讓 canvas 對齊 */
+            overflow: hidden;   /* 關鍵：防止溢出 */
+        }
+        
+        /* 確保 Canvas 填滿容器且游標正確 */
+        canvas { 
+            width: 100%; 
+            height: 100%; 
+            display: block; 
+            touch-action: none; /* 防止手機滑動頁面 */
+            cursor: crosshair;  /* 電腦版游標變十字 */
         }
 
         .chart-container { position: relative; height: 250px; width: 100%; }
         
-        /* 表格 - V38 修改：減少 padding 增加密度 */
+        /* 表格 */
         .table thead th { 
             border-bottom: 2px solid var(--accent-soft); 
             color: var(--primary-hover); 
             font-weight: 600;
             background-color: transparent;
-            padding: 8px 10px; /* 縮減表頭高度 */
+            padding: 8px 10px; 
         }
         .table td { 
             border-bottom: 1px solid #f0f0f0; 
-            padding: 8px 10px; /* 縮減內容高度 (原為 15px) */
+            padding: 8px 10px; 
             color: var(--text-main); 
         }
     </style>
@@ -153,7 +164,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V38
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V39
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -387,6 +398,7 @@
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal;
 
     document.addEventListener('DOMContentLoaded', () => {
+        // V39 Style
         Chart.defaults.color = '#889696';
         Chart.defaults.borderColor = '#E8E6E1';
         Chart.defaults.font.family = '"Noto Sans TC", -apple-system, sans-serif';
@@ -402,15 +414,20 @@
         walkInModal = new bootstrap.Modal(document.getElementById('walkInModal'));
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
 
+        // V39: Fixed signature pad for PC mouse input
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         walkInPad = new SignaturePad(document.getElementById('walkInCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
         window.addEventListener('resize', resizeCanvas);
+        
+        // V39: Force resize when modal is fully shown to fix offset
         document.getElementById('checkInModal').addEventListener('shown.bs.modal', resizeCanvas);
         document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
+        
         document.getElementById('walkInModal').addEventListener('shown.bs.modal', resizeWalkInCanvas);
         document.getElementById('walkInModal').addEventListener('hidden.bs.modal', () => { walkInPad.clear(); });
+        
         document.getElementById('editLogModal').addEventListener('shown.bs.modal', resizeEditLogCanvas);
         document.getElementById('editLogModal').addEventListener('hidden.bs.modal', () => { editLogPad.clear(); });
 
@@ -423,7 +440,6 @@
         renderClientList();
     });
 
-    // ... (All JS Logic preserved identically) ...
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -436,7 +452,6 @@
             div.className = "row g-3";
             filteredClients.forEach(c => {
                 const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
-                // V30: Removed avatar div
                 div.innerHTML += `<div class="col-12 col-md-6"><div class="card p-4 hover-shadow" onclick="showClientDetail(${c.id})" style="cursor:pointer"><div><h5 class="mb-1" style="color:var(--primary-hover)">${c.name}</h5><small class="text-muted">剩餘 ${remain} 堂/次</small></div><div class="ms-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.8rem; color: #CAD2C5"></i></div></div></div>`;
             });
         } else {
@@ -445,7 +460,6 @@
             filteredClients.forEach(c => {
                 const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
                 const badgeClass = remain > 0 ? 'bg-active' : 'bg-light text-muted';
-                // V30: Removed list-avatar span
                 tableHtml += `<tr class="cursor-pointer" onclick="showClientDetail(${c.id})"><td class="ps-4"><span class="fw-bold" style="color:var(--text-main)">${c.name}</span></td><td class="text-end pe-4"><span class="status-badge ${badgeClass}">${remain}</span></td></tr>`;
             });
             tableHtml += `</tbody></table></div></div>`;
@@ -495,7 +509,7 @@
                 const active = con.remainingSessions > 0;
                 const per = con.totalSessions > 0 ? ((con.totalSessions - con.remainingSessions)/con.totalSessions)*100 : 100;
                 const type = con.type || 'course';
-                const badge = type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`;
+                const badge = type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active">教練課程</span>`;
                 const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
                 const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
                 const progressColor = type==='bone'?'#B5838D':'#52796F';
@@ -543,9 +557,35 @@
         saveData(); renderContracts(c); editLogModal.hide(); openHistory(currentContractId); alert('完成');
     }
 
-    function resizeCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('signatureCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); signaturePad.clear(); }
-    function resizeWalkInCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('walkInCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); walkInPad.clear(); }
-    function resizeEditLogCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('editLogCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); editLogPad.clear(); }
+    // V39: Improved resize logic for PC/Mobile compatibility
+    function resizeCanvas() { 
+        const canvas = document.getElementById('signatureCanvas');
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        // Explicitly set width/height based on offsetWidth/Height
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear(); // Clear to prevent artifacts
+    }
+    
+    function resizeWalkInCanvas() { 
+        const canvas = document.getElementById('walkInCanvas');
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        walkInPad.clear();
+    }
+    
+    function resizeEditLogCanvas() { 
+        const canvas = document.getElementById('editLogCanvas');
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        editLogPad.clear();
+    }
+    
     function clearSignature() { signaturePad.clear(); }
     function clearWalkInSig() { walkInPad.clear(); }
     function clearEditLogSig() { editLogPad.clear(); }
@@ -609,7 +649,6 @@
     function addNewClient() { const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); saveData(); renderClientList(); addClientModal.hide(); } }
     function addNewContract() { const t=document.getElementById('newContractTitle').value, s=+document.getElementById('newContractSessions').value, p=+document.getElementById('newContractPrice').value, type=document.getElementById('newContractType').value, date=document.getElementById('newContractDate').value; if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); saveData(); renderContracts(c); addContractModal.hide(); } else { alert("請填寫完整"); } }
     
-    // V37: Open CheckIn Modal with Date ONLY (auto set to today)
     function openCheckIn(id) { 
         currentContractId=id; 
         const c=db.clients.find(x=>x.id===currentClientId); 
@@ -622,7 +661,6 @@
         checkInModal.show(); 
     }
     
-    // V37: Submit CheckIn with Date ONLY (append current time for sorting)
     function submitCheckIn() { 
         if(signaturePad.isEmpty()) return alert('請簽名'); 
         const dIn=document.getElementById('checkInDate').value; 
@@ -631,9 +669,8 @@
         const c=db.clients.find(x=>x.id===currentClientId); 
         const con=c.contracts.find(x=>x.id===currentContractId); 
         
-        // V37: Auto append current HH:MM
         const now = new Date();
-        const dateParts = dIn.split('-'); // [YYYY, MM, DD]
+        const dateParts = dIn.split('-'); 
         const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
         
         con.remainingSessions--; 
