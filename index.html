@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V41.0 (場租留白版)</title>
+    <title>課程管理系統 V42.0 (合約編輯版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V41.0 Zen Wellness 風格 --- */
+        /* --- V42.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -113,7 +113,7 @@
         .modal-footer { padding: 0 30px 30px; border: none; }
         .modal-title { color: var(--primary-hover); }
 
-        /* 歷史紀錄裡的簽名圖 (V38 優化) */
+        /* 歷史紀錄裡的簽名圖 */
         .history-sig-img { 
             height: 20px; 
             border: 1px solid #CAD2C5; 
@@ -122,7 +122,7 @@
             vertical-align: middle;
         }
 
-        /* 簽名板 (V39 修復：PC/Mobile 兼容與高度) */
+        /* 簽名板 */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
@@ -143,7 +143,7 @@
 
         .chart-container { position: relative; height: 250px; width: 100%; }
         
-        /* 表格 (V38 優化密度) */
+        /* 表格 */
         .table thead th { 
             border-bottom: 2px solid var(--accent-soft); 
             color: var(--primary-hover); 
@@ -163,7 +163,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V41
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V42
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -362,6 +362,14 @@
     <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">總堂數/次數</label><input type="number" class="form-control" id="newContractSessions" inputmode="numeric"></div><div class="col-6 mb-3"><label class="form-label text-muted small">總金額</label><input type="number" class="form-control" id="newContractPrice" inputmode="numeric"></div></div>
 </div><div class="modal-footer"><button type="button" class="btn btn-primary w-100 py-2" onclick="addNewContract()">建立</button></div></div></div></div>
 
+<div class="modal fade" id="editContractModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-light"><h5 class="modal-title" style="color:var(--text-main)">編輯方案</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
+    <div class="mb-3"><label class="form-label fw-bold">服務類型</label><select class="form-select" id="editContractType"><option value="course">教練課程</option><option value="bone">傳統整復</option></select></div>
+    <div class="mb-3"><label class="form-label">方案名稱</label><input type="text" class="form-control" id="editContractTitle"></div>
+    <div class="mb-3"><label class="form-label">購買日期</label><input type="date" class="form-control" id="editContractDate"></div>
+    <div class="row"><div class="col-6 mb-3"><label class="form-label">總堂數/次數</label><input type="number" class="form-control" id="editContractSessions"></div><div class="col-6 mb-3"><label class="form-label">總金額</label><input type="number" class="form-control" id="editContractPrice"></div></div>
+    <div class="alert alert-light small text-muted border-0"><i class="fa-solid fa-circle-info me-1"></i>修改總堂數或金額將自動重新計算單價與餘額。</div>
+</div><div class="modal-footer"><button type="button" class="btn btn-primary w-100" onclick="submitEditContract()">儲存變更</button></div></div></div></div>
+
 <div class="modal fade" id="historyModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">歷史紀錄</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-0"><div class="table-responsive"><table class="table table-striped mb-0 align-middle"><thead class="table-light"><tr><th class="ps-4 py-3">時間</th><th>簽名</th><th class="text-end">營收</th><th class="text-end pe-4">操作</th></tr></thead><tbody id="historyTableBody"></tbody></table></div><div id="historyEmptyState" class="text-center py-5 text-muted d-none">無紀錄</div></div></div></div></div>
 
 <div class="modal fade" id="checkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" style="color: var(--primary-hover);">確認扣課</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2">
@@ -393,7 +401,7 @@
     let signaturePad = null, editLogPad = null; 
     let revenueChart = null;
     let viewMode = 'grid', contractViewMode = 'card';
-    let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal;
+    let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal, editContractModal;
 
     document.addEventListener('DOMContentLoaded', () => {
         Chart.defaults.color = '#889696';
@@ -410,6 +418,7 @@
         historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
         walkInModal = new bootstrap.Modal(document.getElementById('walkInModal'));
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
+        editContractModal = new bootstrap.Modal(document.getElementById('editContractModal')); // V42
 
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
@@ -487,7 +496,8 @@
                 const type = con.type || 'course';
                 const badge = type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`;
                 const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : badge;
-                table += `<tr><td class="ps-4">${status} <span class="fw-bold ms-1" style="font-size:0.9rem">${con.title}</span><div class="small text-muted mt-1">${con.purchaseDate?'<i class="fa-regular fa-calendar me-1"></i>'+con.purchaseDate:''}</div></td><td>${con.remainingSessions} / ${con.totalSessions}</td><td class="small fw-bold">$${con.remainingBalance.toLocaleString()}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openCheckIn(${con.id})" title="扣課" ${!active?'disabled':''}><i class="fa-solid fa-pen-nib text-primary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left text-muted"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="delContract(${con.id})" title="刪除"><i class="fa-solid fa-trash-can text-danger"></i></button></td></tr>`;
+                // V42: Added Edit Button to List View
+                table += `<tr><td class="ps-4">${status} <span class="fw-bold ms-1" style="font-size:0.9rem">${con.title}</span><div class="small text-muted mt-1">${con.purchaseDate?'<i class="fa-regular fa-calendar me-1"></i>'+con.purchaseDate:''}</div></td><td>${con.remainingSessions} / ${con.totalSessions}</td><td class="small fw-bold">$${con.remainingBalance.toLocaleString()}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openCheckIn(${con.id})" title="扣課" ${!active?'disabled':''}><i class="fa-solid fa-pen-nib text-primary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen text-secondary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left text-muted"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="delContract(${con.id})" title="刪除"><i class="fa-solid fa-trash-can text-danger"></i></button></td></tr>`;
             });
             table += `</tbody></table></div></div>`;
             div.innerHTML = table;
@@ -500,7 +510,8 @@
                 const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
                 const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
                 const progressColor = type==='bone'?'#B5838D':'#52796F';
-                div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
+                // V42: Added Edit Button to Card View
+                div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             });
         }
     }
@@ -541,6 +552,59 @@
         log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
         if (!editLogPad.isEmpty()) log.signature = editLogPad.toDataURL();
         saveData(); renderContracts(c); editLogModal.hide(); openHistory(currentContractId); alert('完成');
+    }
+
+    // V42: Edit Contract Functions
+    function openEditContract(id) {
+        editingContractId = id;
+        const c = db.clients.find(x => x.id === currentClientId);
+        const con = c.contracts.find(x => x.id === id);
+        
+        document.getElementById('editContractType').value = con.type || 'course';
+        document.getElementById('editContractTitle').value = con.title;
+        document.getElementById('editContractDate').value = con.purchaseDate || '';
+        document.getElementById('editContractSessions').value = con.totalSessions;
+        document.getElementById('editContractPrice').value = con.totalPrice;
+        
+        editContractModal.show();
+    }
+
+    function submitEditContract() {
+        const type = document.getElementById('editContractType').value;
+        const title = document.getElementById('editContractTitle').value;
+        const date = document.getElementById('editContractDate').value;
+        const sessions = parseInt(document.getElementById('editContractSessions').value);
+        const price = parseInt(document.getElementById('editContractPrice').value);
+        
+        if (!title || !sessions || !price) return alert("請填寫完整資訊");
+        
+        const c = db.clients.find(x => x.id === currentClientId);
+        const con = c.contracts.find(x => x.id === editingContractId);
+        
+        // Calculate new unit price
+        const newUnitPrice = Math.floor(price / sessions);
+        
+        // Calculate usage
+        const usedSessions = con.totalSessions - con.remainingSessions;
+        
+        // Update contract details
+        con.type = type;
+        con.title = title;
+        con.purchaseDate = date;
+        con.totalSessions = sessions;
+        con.totalPrice = price;
+        con.unitPrice = newUnitPrice;
+        
+        // Recalculate remaining
+        con.remainingSessions = sessions - usedSessions;
+        // Re-calculate remaining balance: Total - (Used * NewUnitPrice)
+        // Note: This assumes past deductions should also be valued at new unit price logic for consistency in balance
+        con.remainingBalance = price - (usedSessions * newUnitPrice);
+        
+        saveData();
+        renderContracts(c);
+        editContractModal.hide();
+        alert('合約修改完成');
     }
 
     function resizeCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('signatureCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); signaturePad.clear(); }
@@ -614,7 +678,6 @@
         const con=c.contracts.find(x=>x.id===id); 
         document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
         
-        // V37: Set input type=date to today
         document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('checkInVenueCost').value=''; 
         checkInModal.show(); 
@@ -639,13 +702,11 @@
         saveData(); renderContracts(c); checkInModal.hide(); alert('成功'); 
     }
     
-    // V40: Open WalkIn Modal - No signature pad logic
     function openWalkInModal() { 
         document.getElementById('walkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('walkInName').value=''; document.getElementById('walkInPrice').value=''; document.getElementById('walkInVenue').value=''; const dl=document.getElementById('clientSuggestions'); dl.innerHTML=''; db.clients.forEach(c=>{const o=document.createElement('option'); o.value=c.name; dl.appendChild(o);}); walkInModal.show(); 
     }
     
-    // V40: Submit WalkIn - Removed signature validation and data capture
     function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
@@ -659,7 +720,6 @@
         if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
         
         const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
-        // V40: signature field is set to null
         const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
         
         c.contracts.unshift(con); saveData(); renderClientList(); walkInModal.hide(); alert('完成'); 
