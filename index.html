@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V40.0 (極速速記版)</title>
+    <title>課程管理系統 V41.0 (場租留白版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V40.0 Zen Wellness 風格 --- */
+        /* --- V41.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -113,7 +113,7 @@
         .modal-footer { padding: 0 30px 30px; border: none; }
         .modal-title { color: var(--primary-hover); }
 
-        /* 歷史紀錄裡的簽名圖 */
+        /* 歷史紀錄裡的簽名圖 (V38 優化) */
         .history-sig-img { 
             height: 20px; 
             border: 1px solid #CAD2C5; 
@@ -122,7 +122,7 @@
             vertical-align: middle;
         }
 
-        /* 簽名板 */
+        /* 簽名板 (V39 修復：PC/Mobile 兼容與高度) */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
@@ -143,7 +143,7 @@
 
         .chart-container { position: relative; height: 250px; width: 100%; }
         
-        /* 表格 */
+        /* 表格 (V38 優化密度) */
         .table thead th { 
             border-bottom: 2px solid var(--accent-soft); 
             color: var(--primary-hover); 
@@ -163,7 +163,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V40
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V41
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -366,7 +366,7 @@
 
 <div class="modal fade" id="checkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" style="color: var(--primary-hover);">確認扣課</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2">
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="checkInDate"></div>
-    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder="例如：200"></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
+    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder=""></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
 
 <div class="modal fade" id="walkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning text-white"><h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-bolt me-2"></i>單次速記</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
     <div class="mb-3"><label class="form-label fw-bold text-dark">服務類型</label><select class="form-select" id="walkInType"><option value="course" selected>教練課程</option><option value="bone">傳統整復</option></select></div>
@@ -614,6 +614,7 @@
         const con=c.contracts.find(x=>x.id===id); 
         document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
         
+        // V37: Set input type=date to today
         document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('checkInVenueCost').value=''; 
         checkInModal.show(); 
