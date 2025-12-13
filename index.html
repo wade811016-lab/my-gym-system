@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V41.0 (場租留白版)</title>
+    <title>課程管理系統 V40.0 (極速速記版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V41.0 Zen Wellness 風格 --- */
+        /* --- V40.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -113,6 +113,15 @@
         .modal-footer { padding: 0 30px 30px; border: none; }
         .modal-title { color: var(--primary-hover); }
 
+        /* 歷史紀錄裡的簽名圖 */
+        .history-sig-img { 
+            height: 20px; 
+            border: 1px solid #CAD2C5; 
+            border-radius: 4px; 
+            background-color: #fff; 
+            vertical-align: middle;
+        }
+
         /* 簽名板 */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
@@ -154,7 +163,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V41
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V40
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -357,15 +366,14 @@
 
 <div class="modal fade" id="checkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" style="color: var(--primary-hover);">確認扣課</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2">
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="checkInDate"></div>
-    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder=""></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
+    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder="例如：200"></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
 
 <div class="modal fade" id="walkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning text-white"><h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-bolt me-2"></i>單次速記</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
     <div class="mb-3"><label class="form-label fw-bold text-dark">服務類型</label><select class="form-select" id="walkInType"><option value="course" selected>教練課程</option><option value="bone">傳統整復</option></select></div>
     <div class="mb-3"><label class="form-label text-muted small">學員姓名</label><input type="text" class="form-control" id="walkInName" list="clientSuggestions" placeholder="輸入或選擇..."><datalist id="clientSuggestions"></datalist></div>
     <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">收費金額</label><input type="number" class="form-control" id="walkInPrice"></div><div class="col-6 mb-3"><label class="form-label text-muted small text-danger">場租支出</label><input type="number" class="form-control" id="walkInVenue"></div></div>
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="walkInDate"></div>
-    <p class="mb-2 small text-muted">簽名確認</p><div class="signature-pad-wrapper mb-2" style="height: 260px;"><canvas id="walkInCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearWalkInSig()">重新簽名</button>
-</div><div class="modal-footer border-0"><button type="button" class="btn btn-warning w-100 py-2 text-white" onclick="submitWalkIn()">完成紀錄</button></div></div></div></div>
+    </div><div class="modal-footer border-0"><button type="button" class="btn btn-warning w-100 py-2 text-white" onclick="submitWalkIn()">完成紀錄</button></div></div></div></div>
 
 <div class="modal fade" id="editLogModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-info border-3"><div class="modal-header bg-info-subtle"><h5 class="modal-title fw-bold text-dark">編輯紀錄</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="datetime-local" class="form-control" id="editLogDate"></div>
@@ -382,7 +390,7 @@
     let db = { clients: [] };
     let currentClientId = null, currentContractId = null;
     let editingContractId = null, editingLogIndex = null;
-    let signaturePad = null, walkInPad = null, editLogPad = null;
+    let signaturePad = null, editLogPad = null; 
     let revenueChart = null;
     let viewMode = 'grid', contractViewMode = 'card';
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal;
@@ -404,14 +412,11 @@
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
 
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
-        walkInPad = new SignaturePad(document.getElementById('walkInCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
         window.addEventListener('resize', resizeCanvas);
         document.getElementById('checkInModal').addEventListener('shown.bs.modal', resizeCanvas);
         document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
-        document.getElementById('walkInModal').addEventListener('shown.bs.modal', resizeWalkInCanvas);
-        document.getElementById('walkInModal').addEventListener('hidden.bs.modal', () => { walkInPad.clear(); });
         document.getElementById('editLogModal').addEventListener('shown.bs.modal', resizeEditLogCanvas);
         document.getElementById('editLogModal').addEventListener('hidden.bs.modal', () => { editLogPad.clear(); });
 
@@ -424,7 +429,7 @@
         renderClientList();
     });
 
-    // ... (All JS Logic preserved identically) ...
+    // ... (All Helper Functions Preserved) ...
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -437,7 +442,6 @@
             div.className = "row g-3";
             filteredClients.forEach(c => {
                 const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
-                // V30: Removed avatar div
                 div.innerHTML += `<div class="col-12 col-md-6"><div class="card p-4 hover-shadow" onclick="showClientDetail(${c.id})" style="cursor:pointer"><div><h5 class="mb-1" style="color:var(--primary-hover)">${c.name}</h5><small class="text-muted">剩餘 ${remain} 堂/次</small></div><div class="ms-auto text-muted"><i class="fa-solid fa-chevron-right" style="font-size: 0.8rem; color: #CAD2C5"></i></div></div></div>`;
             });
         } else {
@@ -446,7 +450,6 @@
             filteredClients.forEach(c => {
                 const remain = c.contracts.reduce((a,b) => a + b.remainingSessions, 0);
                 const badgeClass = remain > 0 ? 'bg-active' : 'bg-light text-muted';
-                // V30: Removed list-avatar span
                 tableHtml += `<tr class="cursor-pointer" onclick="showClientDetail(${c.id})"><td class="ps-4"><span class="fw-bold" style="color:var(--text-main)">${c.name}</span></td><td class="text-end pe-4"><span class="status-badge ${badgeClass}">${remain}</span></td></tr>`;
             });
             tableHtml += `</tbody></table></div></div>`;
@@ -466,11 +469,9 @@
     function showClientDetail(id) {
         hideAll(); currentClientId = id;
         const c = db.clients.find(x => x.id === id); if(!c) return showClientList();
-        
         document.getElementById('detailName').innerText = c.name; 
         const phoneElem = document.getElementById('detailPhone');
         if (c.phone) { phoneElem.innerHTML = `<i class="fa-solid fa-phone me-2"></i>電話：${c.phone}`; phoneElem.classList.remove('d-none'); } else { phoneElem.classList.add('d-none'); }
-        
         const be = document.getElementById('detailBirthday'); if(c.birthday){be.innerHTML=`<i class="fa-solid fa-cake-candles me-2"></i>生日：${c.birthday}`;be.classList.remove('d-none');}else{be.classList.add('d-none');}
         const ee = document.getElementById('detailEmergency'); if(c.emergencyName||c.emergencyPhone){ee.innerHTML=`<i class="fa-solid fa-triangle-exclamation me-2"></i>緊急聯絡：${c.emergencyName||''} ${c.emergencyPhone?'('+c.emergencyPhone+')':''}`;ee.classList.remove('d-none');}else{ee.classList.add('d-none');}
         document.getElementById('viewClientDetail').classList.remove('d-none'); renderContracts(c);
@@ -479,7 +480,6 @@
     function renderContracts(c) {
         const div = document.getElementById('contractListContainer'); div.innerHTML = '';
         if(c.contracts.length===0) return div.innerHTML = '<div class="text-center text-muted my-5">尚無合約</div>';
-        
         if (contractViewMode === 'list') {
             let table = `<div class="card overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead style="background-color:#F0F4F1"><tr><th class="ps-4">方案</th><th>進度</th><th>餘額</th><th class="text-end pe-4">操作</th></tr></thead><tbody>`;
             c.contracts.forEach(con => {
@@ -500,7 +500,6 @@
                 const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
                 const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
                 const progressColor = type==='bone'?'#B5838D':'#52796F';
-
                 div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             });
         }
@@ -545,10 +544,9 @@
     }
 
     function resizeCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('signatureCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); signaturePad.clear(); }
-    function resizeWalkInCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('walkInCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); walkInPad.clear(); }
+    
     function resizeEditLogCanvas() { const r=Math.max(window.devicePixelRatio||1,1); const c=document.getElementById('editLogCanvas'); c.width=c.offsetWidth*r; c.height=c.offsetHeight*r; c.getContext("2d").scale(r,r); editLogPad.clear(); }
     function clearSignature() { signaturePad.clear(); }
-    function clearWalkInSig() { walkInPad.clear(); }
     function clearEditLogSig() { editLogPad.clear(); }
 
     function renderTrendChart(year, data) {
@@ -616,7 +614,6 @@
         const con=c.contracts.find(x=>x.id===id); 
         document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
         
-        // V37: Set input type=date to today
         document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('checkInVenueCost').value=''; 
         checkInModal.show(); 
