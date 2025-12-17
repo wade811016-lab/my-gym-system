@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V43.0 (精準簽名版)</title>
+    <title>課程管理系統 V44.0 (旋轉自適應版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V43.0 Zen Wellness 風格 --- */
+        /* --- V44.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -37,7 +37,7 @@
             padding-top: 80px;
             background-image: radial-gradient(#E8E6E1 1px, transparent 1px);
             background-size: 20px 20px;
-            overscroll-behavior-y: none; /* 防止iOS下拉重整干擾 */
+            overscroll-behavior-y: none;
         }
         
         /* 導覽列 */
@@ -123,23 +123,23 @@
             vertical-align: middle;
         }
 
-        /* V43 簽名板核心修復：強制定位與觸控行為 */
+        /* 簽名板 */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
             background-color: #fff;
-            height: 260px; /* 大尺寸 */
+            height: 260px;
             width: 100%;
             position: relative;
             overflow: hidden;
-            touch-action: none; /* 關鍵：禁止瀏覽器默認的捲動 */
+            touch-action: none;
         }
         
         canvas { 
             width: 100%; 
             height: 100%; 
             display: block; 
-            touch-action: none; /* 雙重保險 */
+            touch-action: none;
             cursor: crosshair;
         }
 
@@ -165,7 +165,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V43
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V44
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -426,10 +426,14 @@
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
-        window.addEventListener('resize', resizeCanvas);
-        document.getElementById('checkInModal').addEventListener('shown.bs.modal', resizeCanvas);
+        // V44 Rotation Listener with Delay for Stability
+        window.addEventListener('resize', () => { setTimeout(handleResize, 300); });
+        window.addEventListener('orientationchange', () => { setTimeout(handleResize, 300); });
+        
+        // Initial setup hooks
+        document.getElementById('checkInModal').addEventListener('shown.bs.modal', handleResize);
         document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
-        document.getElementById('editLogModal').addEventListener('shown.bs.modal', resizeEditLogCanvas);
+        document.getElementById('editLogModal').addEventListener('shown.bs.modal', handleResize);
         document.getElementById('editLogModal').addEventListener('hidden.bs.modal', () => { editLogPad.clear(); });
 
         document.getElementById('addContractModal').addEventListener('show.bs.modal', function () {
@@ -441,6 +445,7 @@
         renderClientList();
     });
 
+    // ... (All Helper Functions Preserved) ...
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -554,7 +559,6 @@
         saveData(); renderContracts(c); editLogModal.hide(); openHistory(currentContractId); alert('完成');
     }
 
-    // V42: Edit Contract Logic
     function openEditContract(id) {
         editingContractId = id;
         const c = db.clients.find(x => x.id === currentClientId);
@@ -584,22 +588,27 @@
         saveData(); renderContracts(c); editContractModal.hide(); alert('合約修改完成');
     }
 
-    function resizeCanvas() { 
-        const canvas = document.getElementById('signatureCanvas');
+    // V44: Unified Resize Logic for Rotation
+    function handleResize() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
-        signaturePad.clear(); 
-    }
-    
-    function resizeEditLogCanvas() { 
-        const canvas = document.getElementById('editLogCanvas');
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        canvas.width = canvas.offsetWidth * ratio;
-        canvas.height = canvas.offsetHeight * ratio;
-        canvas.getContext("2d").scale(ratio, ratio);
-        editLogPad.clear(); 
+        
+        // Resize Check-in Pad
+        const canvas1 = document.getElementById('signatureCanvas');
+        if(canvas1 && canvas1.offsetParent) {
+            canvas1.width = canvas1.offsetWidth * ratio;
+            canvas1.height = canvas1.offsetHeight * ratio;
+            canvas1.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear();
+        }
+
+        // Resize Edit Log Pad
+        const canvas2 = document.getElementById('editLogCanvas');
+        if(canvas2 && canvas2.offsetParent) {
+            canvas2.width = canvas2.offsetWidth * ratio;
+            canvas2.height = canvas2.offsetHeight * ratio;
+            canvas2.getContext("2d").scale(ratio, ratio);
+            editLogPad.clear();
+        }
     }
     
     function clearSignature() { signaturePad.clear(); }
@@ -669,7 +678,7 @@
         const con=c.contracts.find(x=>x.id===id); 
         document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
         
-        // V37: Date Only (auto today)
+        // V37: Date Only
         document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('checkInVenueCost').value=''; 
         checkInModal.show(); 
@@ -702,6 +711,7 @@
     function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
+        // V40: No signature check
         
         const dateParts = dIn.split('-');
         const now = new Date();
@@ -712,7 +722,6 @@
         if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
         
         const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
-        // V40: signature is null
         const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
         
         c.contracts.unshift(con); saveData(); renderClientList(); walkInModal.hide(); alert('完成'); 
