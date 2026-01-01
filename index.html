@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V47.0 (舊資料瘦身版)</title>
+    <title>課程管理系統 V48.0 (報表修復版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     
     <style>
-        /* --- V47.0 Zen Wellness 風格 --- */
+        /* --- V48.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -159,7 +159,6 @@
             color: var(--text-main); 
         }
         
-        /* Overlay for optimization */
         #optimizingOverlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: rgba(255,255,255,0.9); z-index: 9999;
@@ -179,7 +178,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V47
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V48
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -507,11 +506,17 @@
     function loadData() { 
         try {
             const s = localStorage.getItem(DB_KEY); 
-            if (s) db = JSON.parse(s); 
-            else if (db.clients.length === 0) { db.clients.push({ id: Date.now(), name: "範例學員", phone: "", contracts: [] }); saveData(); } 
+            if (s) {
+                const parsed = JSON.parse(s);
+                if (parsed.clients) db = parsed;
+                else db = { clients: [] };
+            } else if (db.clients.length === 0) { 
+                db.clients.push({ id: Date.now(), name: "範例學員", phone: "", contracts: [] }); 
+                saveData(); 
+            } 
         } catch (e) {
             console.error("Load Error", e);
-            alert("讀取資料失敗，請檢查備份");
+            alert("讀取資料失敗");
         }
     }
     
@@ -520,9 +525,9 @@
             localStorage.setItem(DB_KEY, JSON.stringify(db)); 
         } catch (e) {
             if (e.name === 'QuotaExceededError') {
-                alert("⚠️ 儲存空間已滿！請立即到「備份資料」頁面執行「資料庫瘦身」。");
+                alert("⚠️ 空間已滿，請執行資料庫瘦身");
             } else {
-                alert("儲存錯誤: " + e.message);
+                console.error(e);
             }
         }
     }
@@ -533,6 +538,7 @@
     function showReportView() { hideAll(); document.getElementById('viewReport').classList.remove('d-none'); document.querySelectorAll('.nav-link')[1].classList.add('active'); renderReport(); }
     function showSettings() { hideAll(); document.getElementById('viewSettings').classList.remove('d-none'); document.querySelectorAll('.nav-link')[2].classList.add('active'); }
 
+    // ... (Detail, Contract Render Logic from previous versions) ...
     function showClientDetail(id) {
         hideAll(); currentClientId = id;
         const c = db.clients.find(x => x.id === id); if(!c) return showClientList();
@@ -551,9 +557,7 @@
             let table = `<div class="card overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead style="background-color:#F0F4F1"><tr><th class="ps-4">方案</th><th>進度</th><th>餘額</th><th class="text-end pe-4">操作</th></tr></thead><tbody>`;
             c.contracts.forEach(con => {
                 const active = con.remainingSessions > 0;
-                const type = con.type || 'course';
-                const badge = type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`;
-                const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : badge;
+                const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : (con.type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`);
                 table += `<tr><td class="ps-4">${status} <span class="fw-bold ms-1" style="font-size:0.9rem">${con.title}</span><div class="small text-muted mt-1">${con.purchaseDate?'<i class="fa-regular fa-calendar me-1"></i>'+con.purchaseDate:''}</div></td><td>${con.remainingSessions} / ${con.totalSessions}</td><td class="small fw-bold">$${con.remainingBalance.toLocaleString()}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openCheckIn(${con.id})" title="扣課" ${!active?'disabled':''}><i class="fa-solid fa-pen-nib text-primary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen text-secondary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left text-muted"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="delContract(${con.id})" title="刪除"><i class="fa-solid fa-trash-can text-danger"></i></button></td></tr>`;
             });
             table += `</tbody></table></div></div>`;
@@ -562,16 +566,15 @@
             c.contracts.forEach(con => {
                 const active = con.remainingSessions > 0;
                 const per = con.totalSessions > 0 ? ((con.totalSessions - con.remainingSessions)/con.totalSessions)*100 : 100;
-                const type = con.type || 'course';
-                const badge = type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`;
-                const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
+                const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : (con.type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`);
                 const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
-                const progressColor = type==='bone'?'#B5838D':'#52796F';
+                const progressColor = con.type==='bone'?'#B5838D':'#52796F';
                 div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             });
         }
     }
 
+    // ... (OpenHistory, DeleteLog, EditLog Logic) ...
     function openHistory(contractId) {
         currentContractId = contractId; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === contractId); const tbody = document.getElementById('historyTableBody'); tbody.innerHTML = '';
         if (!con.logs || con.logs.length === 0) { document.getElementById('historyEmptyState').classList.remove('d-none'); } 
@@ -586,8 +589,7 @@
     }
 
     function deleteLog(index) {
-        if(!confirm('⚠️ 確定刪除此紀錄？\n\n系統將自動「歸還」扣除的堂數與金額。')) return;
-        
+        if(!confirm('⚠️ 確定刪除此紀錄？')) return;
         try {
             const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
             con.remainingSessions += 1; con.remainingBalance += parseInt(log.amount); con.logs.splice(index, 1);
@@ -608,135 +610,74 @@
     function submitEditLog() {
         const dateInput = document.getElementById('editLogDate').value; const newAmount = parseInt(document.getElementById('editLogAmount').value); const newVenue = parseInt(document.getElementById('editLogVenueCost').value) || 0;
         if(!dateInput || isNaN(newAmount)) return alert("資料錯誤");
-        
         const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[editingLogIndex];
         con.remainingBalance += (parseInt(log.amount) - newAmount);
         const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
-        
-        if (!editLogPad.isEmpty()) {
-            log.signature = getCompressedSignature(editLogPad);
-        }
-        
-        saveData(); renderContracts(c); 
-        hideModal('editLogModal');
-        openHistory(currentContractId); 
+        if (!editLogPad.isEmpty()) log.signature = getCompressedSignature(editLogPad);
+        saveData(); renderContracts(c); hideModal('editLogModal'); openHistory(currentContractId); 
     }
 
     function openEditContract(id) {
-        editingContractId = id;
-        const c = db.clients.find(x => x.id === currentClientId);
-        const con = c.contracts.find(x => x.id === id);
-        document.getElementById('editContractType').value = con.type || 'course';
-        document.getElementById('editContractTitle').value = con.title;
-        document.getElementById('editContractDate').value = con.purchaseDate || '';
-        document.getElementById('editContractSessions').value = con.totalSessions;
-        document.getElementById('editContractPrice').value = con.totalPrice;
+        editingContractId = id; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === id);
+        document.getElementById('editContractType').value = con.type || 'course'; document.getElementById('editContractTitle').value = con.title; document.getElementById('editContractDate').value = con.purchaseDate || ''; document.getElementById('editContractSessions').value = con.totalSessions; document.getElementById('editContractPrice').value = con.totalPrice;
         editContractModal.show();
     }
 
     function submitEditContract() {
-        const type = document.getElementById('editContractType').value;
-        const title = document.getElementById('editContractTitle').value;
-        const date = document.getElementById('editContractDate').value;
-        const sessions = parseInt(document.getElementById('editContractSessions').value);
-        const price = parseInt(document.getElementById('editContractPrice').value);
+        const type = document.getElementById('editContractType').value; const title = document.getElementById('editContractTitle').value; const date = document.getElementById('editContractDate').value; const sessions = parseInt(document.getElementById('editContractSessions').value); const price = parseInt(document.getElementById('editContractPrice').value);
         if (!title || !sessions || !price) return alert("請填寫完整資訊");
-        const c = db.clients.find(x => x.id === currentClientId);
-        const con = c.contracts.find(x => x.id === editingContractId);
-        const newUnitPrice = Math.floor(price / sessions);
-        const usedSessions = con.totalSessions - con.remainingSessions;
+        const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === editingContractId);
+        const newUnitPrice = Math.floor(price / sessions); const usedSessions = con.totalSessions - con.remainingSessions;
         con.type = type; con.title = title; con.purchaseDate = date; con.totalSessions = sessions; con.totalPrice = price; con.unitPrice = newUnitPrice;
-        con.remainingSessions = sessions - usedSessions;
-        con.remainingBalance = price - (usedSessions * newUnitPrice);
-        saveData(); renderContracts(c); 
-        hideModal('editContractModal');
+        con.remainingSessions = sessions - usedSessions; con.remainingBalance = price - (usedSessions * newUnitPrice);
+        saveData(); renderContracts(c); hideModal('editContractModal');
     }
 
-    // V47: Database Optimization Logic (Compress Old PNGs to JPG)
+    // Optimization Functions
     async function optimizeDatabase() {
-        const overlay = document.getElementById('optimizingOverlay');
-        const progress = document.getElementById('optProgress');
-        overlay.classList.remove('d-none');
-        
+        const overlay = document.getElementById('optimizingOverlay'); overlay.classList.remove('d-none');
         let count = 0;
-        let totalLogs = 0;
-        
-        // Count total logs first
-        db.clients.forEach(c => c.contracts.forEach(con => { if(con.logs) totalLogs += con.logs.length; }));
-        
         for (let i = 0; i < db.clients.length; i++) {
             const client = db.clients[i];
             for (let j = 0; j < client.contracts.length; j++) {
                 const contract = client.contracts[j];
-                if (contract.logs && contract.logs.length > 0) {
+                if (contract.logs) {
                     for (let k = 0; k < contract.logs.length; k++) {
                         const log = contract.logs[k];
-                        // Identify uncompressed PNG data
                         if (log.signature && log.signature.startsWith('data:image/png')) {
-                            try {
-                                log.signature = await convertPngToJpg(log.signature);
-                                count++;
-                            } catch(e) {
-                                console.error("Convert fail", e);
-                            }
+                            try { log.signature = await convertPngToJpg(log.signature); count++; } catch(e) {}
                         }
                     }
                 }
             }
         }
-        
-        saveData();
-        overlay.classList.add('d-none');
-        alert(`優化完成！\n已成功壓縮 ${count} 筆舊簽名資料。\n您的儲存空間已釋放。`);
+        saveData(); overlay.classList.add('d-none'); alert(`優化完成！壓縮了 ${count} 筆資料。`);
     }
 
     function convertPngToJpg(pngDataUrl) {
         return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#FFFFFF'; // JPG needs white bg
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/jpeg', 0.5)); // High compression
-            };
-            img.onerror = reject;
-            img.src = pngDataUrl;
+            const img = new Image(); img.onload = () => {
+                const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.5));
+            }; img.onerror = reject; img.src = pngDataUrl;
         });
     }
 
     function getCompressedSignature(padInstance) {
-        const tempCanvas = document.createElement('canvas');
-        const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        tempCanvas.width = padInstance.canvas.width;
-        tempCanvas.height = padInstance.canvas.height;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        ctx.drawImage(padInstance.canvas, 0, 0);
+        const tempCanvas = document.createElement('canvas'); const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        tempCanvas.width = padInstance.canvas.width; tempCanvas.height = padInstance.canvas.height;
+        const ctx = tempCanvas.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height); ctx.drawImage(padInstance.canvas, 0, 0);
         return tempCanvas.toDataURL('image/jpeg', 0.5); 
     }
 
     function handleResize() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         const canvas1 = document.getElementById('signatureCanvas');
-        if(canvas1 && canvas1.offsetParent) {
-            canvas1.width = canvas1.offsetWidth * ratio;
-            canvas1.height = canvas1.offsetHeight * ratio;
-            canvas1.getContext("2d").scale(ratio, ratio);
-            signaturePad.clear();
-        }
+        if(canvas1 && canvas1.offsetParent) { canvas1.width = canvas1.offsetWidth * ratio; canvas1.height = canvas1.offsetHeight * ratio; canvas1.getContext("2d").scale(ratio, ratio); signaturePad.clear(); }
         const canvas2 = document.getElementById('editLogCanvas');
-        if(canvas2 && canvas2.offsetParent) {
-            canvas2.width = canvas2.offsetWidth * ratio;
-            canvas2.height = canvas2.offsetHeight * ratio;
-            canvas2.getContext("2d").scale(ratio, ratio);
-            editLogPad.clear();
-        }
+        if(canvas2 && canvas2.offsetParent) { canvas2.width = canvas2.offsetWidth * ratio; canvas2.height = canvas2.offsetHeight * ratio; canvas2.getContext("2d").scale(ratio, ratio); editLogPad.clear(); }
     }
     
     function openCheckIn(id) { 
@@ -755,64 +696,33 @@
         if(!dIn) return alert('選日期'); 
         
         try {
-            const c=db.clients.find(x=>x.id===currentClientId); 
-            const con=c.contracts.find(x=>x.id===currentContractId); 
-            
-            const now = new Date();
-            const dateParts = dIn.split('-'); 
+            const c=db.clients.find(x=>x.id===currentClientId); const con=c.contracts.find(x=>x.id===currentContractId); 
+            const now = new Date(); const dateParts = dIn.split('-'); 
             const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-            
-            con.remainingSessions--; 
-            con.remainingBalance-=con.unitPrice; 
-            
-            // V46+: Use compressed signature
+            con.remainingSessions--; con.remainingBalance-=con.unitPrice; 
             const sigData = getCompressedSignature(signaturePad);
-            
-            con.logs.unshift({
-                date: dStr, 
-                amount: con.unitPrice, 
-                venueCost: parseInt(document.getElementById('checkInVenueCost').value)||0, 
-                signature: sigData
-            }); 
-            
-            saveData(); 
-            renderContracts(c); 
-            hideModal('checkInModal');
-        } catch (e) {
-            alert("操作失敗，請截圖聯絡管理員: " + e.message);
-        }
+            con.logs.unshift({ date: dStr, amount: con.unitPrice, venueCost: parseInt(document.getElementById('checkInVenueCost').value)||0, signature: sigData }); 
+            saveData(); renderContracts(c); hideModal('checkInModal');
+        } catch (e) { alert("操作失敗"); }
     }
     
     function clearSignature() { signaturePad.clear(); }
     function clearEditLogSig() { editLogPad.clear(); }
 
-    // ... (WalkIn and other functions remain same) ...
-    function openWalkInModal() { 
-        document.getElementById('walkInDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('walkInName').value=''; document.getElementById('walkInPrice').value=''; document.getElementById('walkInVenue').value=''; const dl=document.getElementById('clientSuggestions'); dl.innerHTML=''; db.clients.forEach(c=>{const o=document.createElement('option'); o.value=c.name; dl.appendChild(o);}); walkInModal.show(); 
-    }
+    function openWalkInModal() { document.getElementById('walkInDate').value = new Date().toISOString().split('T')[0]; document.getElementById('walkInName').value=''; document.getElementById('walkInPrice').value=''; document.getElementById('walkInVenue').value=''; const dl=document.getElementById('clientSuggestions'); dl.innerHTML=''; db.clients.forEach(c=>{const o=document.createElement('option'); o.value=c.name; dl.appendChild(o);}); walkInModal.show(); }
     
     function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
-        
-        const dateParts = dIn.split('-');
-        const now = new Date();
-        const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        const dateForTitle = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`;
-        
-        let c=db.clients.find(x=>x.name===n); 
-        if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
-        
+        const dateParts = dIn.split('-'); const now = new Date(); const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`; const dateForTitle = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`;
+        let c=db.clients.find(x=>x.name===n); if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
         const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
         const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
-        
-        c.contracts.unshift(con); saveData(); renderClientList(); 
-        hideModal('walkInModal');
+        c.contracts.unshift(con); saveData(); renderClientList(); hideModal('walkInModal');
     }
 
     function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); saveData(); renderContracts(c); } }
-    function resetSystem() { if(confirm('清除所有資料?')) { localStorage.removeItem(DB_KEY); location.reload(); } }
+    function resetSystem() { if(confirm('清除?')) { localStorage.removeItem(DB_KEY); location.reload(); } }
     function copyDataToClipboard() { navigator.clipboard.writeText(JSON.stringify(db)).then(()=>alert('複製成功')).catch(()=>alert('失敗')); }
     function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(db)); a.download="backup.json"; a.click(); }
     function restoreFromText() { try { const d=JSON.parse(document.getElementById('restoreTextInput').value); if(d.clients && confirm('還原?')) { db=d; saveData(); location.reload(); } } catch(e){alert('代碼錯');} }
@@ -820,6 +730,58 @@
     function openEditClientModal() { const c=db.clients.find(x=>x.id===currentClientId); document.getElementById('editClientName').value=c.name; document.getElementById('editClientPhone').value=c.phone; document.getElementById('editClientBirthday').value=c.birthday||''; document.getElementById('editClientEmergencyName').value=c.emergencyName||''; document.getElementById('editClientEmergencyPhone').value=c.emergencyPhone||''; editClientModal.show(); }
     function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
     function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); saveData(); editClientModal.hide(); showClientList(); } }
+
+    // V48: Safer Render Report Logic (Calculates Prepaid FIRST)
+    function renderReport() {
+        // 1. Calculate Prepaid First (Failsafe)
+        let tPre = 0;
+        try {
+            db.clients.forEach(c => c.contracts.forEach(con => {
+                if (con.remainingBalance > 0) tPre += con.remainingBalance;
+            }));
+        } catch(e) { console.error(e); }
+        document.getElementById('reportTotalPrepaid').innerText = '$' + tPre.toLocaleString();
+
+        const y = document.getElementById('reportYear').value;
+        const m = document.getElementById('reportMonth').value;
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+
+        // 2. Try to Render Chart
+        try {
+            renderTrendChart(y);
+        } catch (e) {
+            console.error("Chart Render Failed", e);
+            // Optionally clear canvas or show error
+        }
+
+        // 3. Render Table & Stats
+        let tRev = 0, tVenue = 0, trRev = 0, boRev = 0, recs = [];
+        db.clients.forEach(c => c.contracts.forEach(con => con.logs.forEach(l => {
+            const d = new Date(l.date);
+            if (d.getFullYear() == y && (m === 'all' || d.getMonth() + 1 == m)) {
+                tRev += l.amount; tVenue += (l.venueCost || 0);
+                const type = con.type || 'course'; if (type === 'bone') boRev += l.amount; else trRev += l.amount;
+                recs.push({ d: l.date, n: c.name, a: l.amount, vc: l.venueCost || 0, type: type });
+            }
+        })));
+
+        document.getElementById('reportTotalRevenue').innerText = '$' + tRev.toLocaleString();
+        document.getElementById('reportTotalVenueCost').innerText = '$' + tVenue.toLocaleString();
+        document.getElementById('reportNetIncome').innerText = '$' + (tRev - tVenue).toLocaleString();
+        document.getElementById('reportTrainingRev').innerText = '$' + trRev.toLocaleString();
+        document.getElementById('reportBoneRev').innerText = '$' + boRev.toLocaleString();
+
+        if (recs.length === 0) document.getElementById('reportEmptyState').classList.remove('d-none');
+        else {
+            document.getElementById('reportEmptyState').classList.add('d-none');
+            recs.sort((a, b) => new Date(b.d) - new Date(a.d)).forEach(r => {
+                const itemText = r.type === 'bone' ? '<span style="color:#B5838D;font-weight:600">傳統整復</span>' : '<span style="color:#52796F;font-weight:600">教練課程</span>';
+                const dateOnly = r.d.split(' ')[0];
+                tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc > 0 ? '-$' + r.vc : '-'}</td></tr>`;
+            });
+        }
+    }
 </script>
 </body>
 </html>
