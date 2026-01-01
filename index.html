@@ -5,28 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V50.0 (圖表終極版)</title>
+    <title>課程管理系統 V51.0 (絕對防禦版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     
     <style>
-        /* --- V50.0 Zen Wellness 風格 --- */
+        /* --- V51.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
             --text-main: #2F3E46;     
             --text-muted: #889696;    
-            
             --primary-color: #84A98C; 
             --primary-hover: #52796F; 
-            
             --accent-warm: #E6B8A2;   
             --accent-soft: #CAD2C5;   
-            
             --border-radius: 20px;    
             --btn-radius: 50px;       
-            
             --shadow-soft: 0 10px 25px -5px rgba(82, 121, 111, 0.1); 
         }
 
@@ -123,7 +119,7 @@
             vertical-align: middle;
         }
 
-        /* 簽名板 */
+        /* 簽名板 (V44 旋轉自適應) */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
@@ -143,7 +139,13 @@
             cursor: crosshair;
         }
 
-        .chart-container { position: relative; height: 250px; width: 100%; }
+        /* V51: 強制設定圖表容器樣式 */
+        .chart-container { 
+            position: relative; 
+            height: 250px !important;
+            width: 100%; 
+            overflow: hidden;
+        }
         
         /* 表格 */
         .table thead th { 
@@ -178,7 +180,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V50
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V51
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -275,7 +277,7 @@
         <div class="card p-4 mb-4 border-0" style="background-color: var(--primary-color); color: white;">
             <div class="d-flex justify-content-between align-items-center">
                 <div><div class="fs-1 fw-bold" style="color: rgba(255,255,255,0.95);">總預收額</div></div>
-                <div class="text-end"><div class="fs-1 fw-bold" id="reportTotalPrepaid">$0</div></div>
+                <div class="text-end"><div class="fs-1 fw-bold" id="reportTotalPrepaid">計算中...</div></div>
             </div>
         </div>
 
@@ -294,7 +296,7 @@
 
         <div class="card p-4 mb-4">
             <h6 class="text-muted small fw-bold mb-4">年度業績趨勢</h6>
-            <div class="chart-container">
+            <div class="chart-container" id="chartContainer">
                 <canvas id="revenueChart"></canvas>
             </div>
         </div>
@@ -425,9 +427,10 @@
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal, editContractModal;
 
     document.addEventListener('DOMContentLoaded', () => {
-        // V50: Chart 2.9.4 compatible config
-        Chart.defaults.global.defaultFontColor = '#889696';
-        Chart.defaults.global.defaultFontFamily = '"Noto Sans TC", -apple-system, sans-serif';
+        // V51: Reverted to Chart.js 4.4 defaults
+        Chart.defaults.color = '#889696';
+        Chart.defaults.borderColor = '#E8E6E1';
+        Chart.defaults.font.family = '"Noto Sans TC", -apple-system, sans-serif';
 
         migrateOldData();
         loadData();
@@ -461,7 +464,6 @@
         renderClientList();
     });
 
-    // Helper: Safe Modal Hide
     function hideModal(id) {
         const el = document.getElementById(id);
         const instance = bootstrap.Modal.getInstance(el);
@@ -538,7 +540,6 @@
     function showReportView() { hideAll(); document.getElementById('viewReport').classList.remove('d-none'); document.querySelectorAll('.nav-link')[1].classList.add('active'); renderReport(); }
     function showSettings() { hideAll(); document.getElementById('viewSettings').classList.remove('d-none'); document.querySelectorAll('.nav-link')[2].classList.add('active'); }
 
-    // ... (Detail, Contract Render, History Logic) ...
     function showClientDetail(id) {
         hideAll(); currentClientId = id;
         const c = db.clients.find(x => x.id === id); if(!c) return showClientList();
@@ -733,12 +734,69 @@
     function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
     function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); saveData(); editClientModal.hide(); showClientList(); } }
 
-    // V50: Chart.js 2.9.4 Render Logic
-    function renderTrendChart(year, data) {
-        // Calculate Data
+    // V51: Robust Render Logic (Calculations FIRST, Chart LAST)
+    function renderReport() {
+        // 1. Calculate Prepaid (Text Only, No Chart Dependency)
+        let tPre = 0;
+        try {
+            db.clients.forEach(c => c.contracts.forEach(con => {
+                if (con.remainingBalance > 0) tPre += con.remainingBalance;
+            }));
+        } catch(e) { console.error(e); }
+        document.getElementById('reportTotalPrepaid').innerText = '$' + tPre.toLocaleString();
+
+        const y = document.getElementById('reportYear').value;
+        const m = document.getElementById('reportMonth').value;
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+
+        // 2. Calculate Stats & Render Table (Text Only, No Chart Dependency)
+        let tRev = 0, tVenue = 0, trRev = 0, boRev = 0, recs = [];
+        db.clients.forEach(c => c.contracts.forEach(con => con.logs.forEach(l => {
+            const d = new Date(l.date);
+            if (d.getFullYear() == y && (m === 'all' || d.getMonth() + 1 == m)) {
+                tRev += l.amount; tVenue += (l.venueCost || 0);
+                const type = con.type || 'course'; if (type === 'bone') boRev += l.amount; else trRev += l.amount;
+                recs.push({ d: l.date, n: c.name, a: l.amount, vc: l.venueCost || 0, type: type });
+            }
+        })));
+
+        document.getElementById('reportTotalRevenue').innerText = '$' + tRev.toLocaleString();
+        document.getElementById('reportTotalVenueCost').innerText = '$' + tVenue.toLocaleString();
+        document.getElementById('reportNetIncome').innerText = '$' + (tRev - tVenue).toLocaleString();
+        document.getElementById('reportTrainingRev').innerText = '$' + trRev.toLocaleString();
+        document.getElementById('reportBoneRev').innerText = '$' + boRev.toLocaleString();
+
+        if (recs.length === 0) document.getElementById('reportEmptyState').classList.remove('d-none');
+        else {
+            document.getElementById('reportEmptyState').classList.add('d-none');
+            recs.sort((a, b) => new Date(b.d) - new Date(a.d)).forEach(r => {
+                const itemText = r.type === 'bone' ? '<span style="color:#B5838D;font-weight:600">傳統整復</span>' : '<span style="color:#52796F;font-weight:600">教練課程</span>';
+                const dateOnly = r.d.split(' ')[0];
+                tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc > 0 ? '-$' + r.vc : '-'}</td></tr>`;
+            });
+        }
+
+        // 3. Render Chart (Isolated in Try-Catch)
+        try {
+            renderTrendChart(y);
+        } catch (e) {
+            console.error("Chart Render Failed", e);
+            const container = document.getElementById('revenueChart').parentNode;
+            // Only show error if canvas is empty/broken, otherwise keep old chart or silent fail
+            // container.innerHTML = '<div class="text-center text-muted small py-5">圖表暫時無法顯示</div>'; 
+        }
+    }
+
+    // V51: Chart Render Function using Modern v4 Syntax
+    function renderTrendChart(year) {
+        if (typeof Chart === 'undefined') return;
+
+        const ctx = document.getElementById('revenueChart').getContext('2d');
         const labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
         const trainData = new Array(12).fill(0); 
         const boneData = new Array(12).fill(0);
+
         db.clients.forEach(c => { 
             c.contracts.forEach(con => { 
                 const type = con.type || 'course'; 
@@ -753,28 +811,62 @@
             }); 
         });
 
-        // Destroy old chart
         if (revenueChart) { revenueChart.destroy(); }
 
-        // Render New Chart (Chart.js 2.x Syntax)
-        const ctx = document.getElementById('revenueChart').getContext('2d');
         revenueChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
-                    { label: '教練課程', data: trainData, borderColor: '#52796F', backgroundColor: 'rgba(82, 121, 111, 0.1)', borderWidth: 2, pointRadius: 3 },
-                    { label: '傳統整復', data: boneData, borderColor: '#B5838D', backgroundColor: 'rgba(181, 131, 141, 0.1)', borderWidth: 2, pointRadius: 3 }
+                    { 
+                        label: '教練課程', 
+                        data: trainData, 
+                        borderColor: '#52796F', 
+                        backgroundColor: '#52796F', 
+                        tension: 0.4, 
+                        borderWidth: 3, 
+                        pointRadius: 4, 
+                        pointBackgroundColor: '#fff', 
+                        pointBorderWidth: 2 
+                    },
+                    { 
+                        label: '傳統整復', 
+                        data: boneData, 
+                        borderColor: '#B5838D', 
+                        backgroundColor: '#B5838D', 
+                        tension: 0.4, 
+                        borderWidth: 3, 
+                        pointRadius: 4, 
+                        pointBackgroundColor: '#fff', 
+                        pointBorderWidth: 2 
+                    }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    yAxes: [{ ticks: { beginAtZero: true } }],
-                    xAxes: [{ gridLines: { display: false } }]
-                },
-                legend: { position: 'bottom' }
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#E8E6E1', drawBorder: false }, 
+                        ticks: { color: '#889696' } 
+                    }, 
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { color: '#889696' } 
+                    } 
+                }, 
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { 
+                            usePointStyle: true, 
+                            padding: 20,
+                            font: { family: '"Noto Sans TC"' } 
+                        } 
+                    } 
+                } 
             }
         });
     }
