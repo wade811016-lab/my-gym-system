@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V44.0 (旋轉自適應版)</title>
+    <title>課程管理系統 V45.0 (穩定核心版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* --- V44.0 Zen Wellness 風格 --- */
+        /* --- V45.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -165,7 +165,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V44
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V45
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -383,7 +383,7 @@
     <div class="mb-3"><label class="form-label text-muted small">學員姓名</label><input type="text" class="form-control" id="walkInName" list="clientSuggestions" placeholder="輸入或選擇..."><datalist id="clientSuggestions"></datalist></div>
     <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">收費金額</label><input type="number" class="form-control" id="walkInPrice"></div><div class="col-6 mb-3"><label class="form-label text-muted small text-danger">場租支出</label><input type="number" class="form-control" id="walkInVenue"></div></div>
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="walkInDate"></div>
-    </div><div class="modal-footer border-0"><button type="button" class="btn btn-warning w-100 py-2 text-white" onclick="submitWalkIn()">完成紀錄</button></div></div></div></div>
+</div><div class="modal-footer border-0"><button type="button" class="btn btn-warning w-100 py-2 text-white" onclick="submitWalkIn()">完成紀錄</button></div></div></div></div>
 
 <div class="modal fade" id="editLogModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-info border-3"><div class="modal-header bg-info-subtle"><h5 class="modal-title fw-bold text-dark">編輯紀錄</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body">
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="datetime-local" class="form-control" id="editLogDate"></div>
@@ -422,15 +422,13 @@
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
         editContractModal = new bootstrap.Modal(document.getElementById('editContractModal'));
 
-        // V43 Logic: Corrected coordinates and retina support
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
-        // V44 Rotation Listener with Delay for Stability
+        // V44 Rotation Fix
         window.addEventListener('resize', () => { setTimeout(handleResize, 300); });
         window.addEventListener('orientationchange', () => { setTimeout(handleResize, 300); });
         
-        // Initial setup hooks
         document.getElementById('checkInModal').addEventListener('shown.bs.modal', handleResize);
         document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
         document.getElementById('editLogModal').addEventListener('shown.bs.modal', handleResize);
@@ -445,7 +443,13 @@
         renderClientList();
     });
 
-    // ... (All Helper Functions Preserved) ...
+    // Helper: Safe Modal Hide (V45 Fix)
+    function hideModal(id) {
+        const el = document.getElementById(id);
+        const instance = bootstrap.Modal.getInstance(el);
+        if (instance) instance.hide();
+    }
+
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -538,7 +542,10 @@
         if(!confirm('⚠️ 確定刪除此紀錄？\n\n系統將自動「歸還」扣除的堂數與金額。')) return;
         const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
         con.remainingSessions += 1; con.remainingBalance += parseInt(log.amount); con.logs.splice(index, 1);
-        saveData(); renderContracts(c); openHistory(currentContractId); alert('已刪除');
+        saveData(); 
+        
+        // V45 Fix: Refresh history list without re-opening modal
+        openHistory(currentContractId); 
     }
 
     function openEditLog(index) {
@@ -556,7 +563,9 @@
         const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
         if (!editLogPad.isEmpty()) log.signature = editLogPad.toDataURL();
-        saveData(); renderContracts(c); editLogModal.hide(); openHistory(currentContractId); alert('完成');
+        saveData(); renderContracts(c); 
+        hideModal('editLogModal');
+        openHistory(currentContractId); 
     }
 
     function openEditContract(id) {
@@ -585,7 +594,8 @@
         con.type = type; con.title = title; con.purchaseDate = date; con.totalSessions = sessions; con.totalPrice = price; con.unitPrice = newUnitPrice;
         con.remainingSessions = sessions - usedSessions;
         con.remainingBalance = price - (usedSessions * newUnitPrice);
-        saveData(); renderContracts(c); editContractModal.hide(); alert('合約修改完成');
+        saveData(); renderContracts(c); 
+        hideModal('editContractModal');
     }
 
     // V44: Unified Resize Logic for Rotation
@@ -668,22 +678,17 @@
         }
     }
 
-    // Actions
-    function addNewClient() { const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); saveData(); renderClientList(); addClientModal.hide(); } }
-    function addNewContract() { const t=document.getElementById('newContractTitle').value, s=+document.getElementById('newContractSessions').value, p=+document.getElementById('newContractPrice').value, type=document.getElementById('newContractType').value, date=document.getElementById('newContractDate').value; if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); saveData(); renderContracts(c); addContractModal.hide(); } else { alert("請填寫完整"); } }
-    
     function openCheckIn(id) { 
         currentContractId=id; 
         const c=db.clients.find(x=>x.id===currentClientId); 
         const con=c.contracts.find(x=>x.id===id); 
         document.getElementById('modalDeductAmount').innerText = `$${con.unitPrice}`; 
-        
-        // V37: Date Only
         document.getElementById('checkInDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('checkInVenueCost').value=''; 
         checkInModal.show(); 
     }
     
+    // V45 Fix: Close Modal FIRST, then Alert (or remove alert) to prevent iOS freeze
     function submitCheckIn() { 
         if(signaturePad.isEmpty()) return alert('請簽名'); 
         const dIn=document.getElementById('checkInDate').value; 
@@ -700,7 +705,12 @@
         con.remainingBalance-=con.unitPrice; 
         con.logs.unshift({date:dStr, amount:con.unitPrice, venueCost:parseInt(document.getElementById('checkInVenueCost').value)||0, signature:signaturePad.toDataURL()}); 
         
-        saveData(); renderContracts(c); checkInModal.hide(); alert('成功'); 
+        saveData(); 
+        renderContracts(c); 
+        
+        // V45 Fix: Force close logic
+        hideModal('checkInModal');
+        // Removed alert('成功') to prevent thread blocking on iOS
     }
     
     function openWalkInModal() { 
@@ -711,7 +721,6 @@
     function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
-        // V40: No signature check
         
         const dateParts = dIn.split('-');
         const now = new Date();
@@ -724,7 +733,8 @@
         const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
         const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
         
-        c.contracts.unshift(con); saveData(); renderClientList(); walkInModal.hide(); alert('完成'); 
+        c.contracts.unshift(con); saveData(); renderClientList(); 
+        hideModal('walkInModal');
     }
 
     function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); saveData(); renderContracts(c); } }
