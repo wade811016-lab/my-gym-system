@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V51.0 (絕對防禦版)</title>
+    <title>課程管理系統 V52.0 (穩定重構版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     
     <style>
-        /* --- V51.0 Zen Wellness 風格 --- */
+        /* --- V52.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -139,7 +139,6 @@
             cursor: crosshair;
         }
 
-        /* V51: 強制設定圖表容器樣式 */
         .chart-container { 
             position: relative; 
             height: 250px !important;
@@ -180,7 +179,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V51
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V52
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -277,7 +276,7 @@
         <div class="card p-4 mb-4 border-0" style="background-color: var(--primary-color); color: white;">
             <div class="d-flex justify-content-between align-items-center">
                 <div><div class="fs-1 fw-bold" style="color: rgba(255,255,255,0.95);">總預收額</div></div>
-                <div class="text-end"><div class="fs-1 fw-bold" id="reportTotalPrepaid">計算中...</div></div>
+                <div class="text-end"><div class="fs-1 fw-bold" id="reportTotalPrepaid">$0</div></div>
             </div>
         </div>
 
@@ -296,7 +295,7 @@
 
         <div class="card p-4 mb-4">
             <h6 class="text-muted small fw-bold mb-4">年度業績趨勢</h6>
-            <div class="chart-container" id="chartContainer">
+            <div class="chart-container">
                 <canvas id="revenueChart"></canvas>
             </div>
         </div>
@@ -427,7 +426,7 @@
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal, editContractModal;
 
     document.addEventListener('DOMContentLoaded', () => {
-        // V51: Reverted to Chart.js 4.4 defaults
+        // V52: Reverted to Chart.js 4.4 defaults for stability
         Chart.defaults.color = '#889696';
         Chart.defaults.borderColor = '#E8E6E1';
         Chart.defaults.font.family = '"Noto Sans TC", -apple-system, sans-serif';
@@ -435,6 +434,7 @@
         migrateOldData();
         loadData();
         
+        // Initialize all modals
         addClientModal = new bootstrap.Modal(document.getElementById('addClientModal'));
         editClientModal = new bootstrap.Modal(document.getElementById('editClientModal'));
         addContractModal = new bootstrap.Modal(document.getElementById('addContractModal'));
@@ -447,6 +447,7 @@
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
+        // Rotation & Resize Handlers
         window.addEventListener('resize', () => { setTimeout(handleResize, 300); });
         window.addEventListener('orientationchange', () => { setTimeout(handleResize, 300); });
         
@@ -464,10 +465,12 @@
         renderClientList();
     });
 
+    // V52 Helper: Robust Modal Hiding
     function hideModal(id) {
         const el = document.getElementById(id);
         const instance = bootstrap.Modal.getInstance(el);
         if (instance) instance.hide();
+        // Fallback cleanup
         setTimeout(() => {
             document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
             document.body.classList.remove('modal-open');
@@ -592,6 +595,7 @@
         historyModal.show();
     }
 
+    // V52: Safe Deletion with Try-Catch
     function deleteLog(index) {
         if(!confirm('⚠️ 確定刪除此紀錄？\n\n系統將自動「歸還」扣除的堂數與金額。')) return;
         try {
@@ -600,7 +604,7 @@
             saveData(); 
             openHistory(currentContractId); 
         } catch(e) {
-            alert('刪除失敗');
+            alert('刪除失敗: ' + e.message);
         }
     }
 
@@ -612,14 +616,16 @@
     }
 
     function submitEditLog() {
-        const dateInput = document.getElementById('editLogDate').value; const newAmount = parseInt(document.getElementById('editLogAmount').value); const newVenue = parseInt(document.getElementById('editLogVenueCost').value) || 0;
-        if(!dateInput || isNaN(newAmount)) return alert("資料錯誤");
-        const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[editingLogIndex];
-        con.remainingBalance += (parseInt(log.amount) - newAmount);
-        const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
-        if (!editLogPad.isEmpty()) log.signature = getCompressedSignature(editLogPad);
-        saveData(); renderContracts(c); hideModal('editLogModal'); openHistory(currentContractId); 
+        try {
+            const dateInput = document.getElementById('editLogDate').value; const newAmount = parseInt(document.getElementById('editLogAmount').value); const newVenue = parseInt(document.getElementById('editLogVenueCost').value) || 0;
+            if(!dateInput || isNaN(newAmount)) return alert("資料錯誤");
+            const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[editingLogIndex];
+            con.remainingBalance += (parseInt(log.amount) - newAmount);
+            const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+            log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
+            if (!editLogPad.isEmpty()) log.signature = getCompressedSignature(editLogPad);
+            saveData(); renderContracts(c); hideModal('editLogModal'); openHistory(currentContractId);
+        } catch(e) { alert("修改失敗: " + e.message); }
     }
 
     function openEditContract(id) {
@@ -629,13 +635,15 @@
     }
 
     function submitEditContract() {
-        const type = document.getElementById('editContractType').value; const title = document.getElementById('editContractTitle').value; const date = document.getElementById('editContractDate').value; const sessions = parseInt(document.getElementById('editContractSessions').value); const price = parseInt(document.getElementById('editContractPrice').value);
-        if (!title || !sessions || !price) return alert("請填寫完整資訊");
-        const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === editingContractId);
-        const newUnitPrice = Math.floor(price / sessions); const usedSessions = con.totalSessions - con.remainingSessions;
-        con.type = type; con.title = title; con.purchaseDate = date; con.totalSessions = sessions; con.totalPrice = price; con.unitPrice = newUnitPrice;
-        con.remainingSessions = sessions - usedSessions; con.remainingBalance = price - (usedSessions * newUnitPrice);
-        saveData(); renderContracts(c); hideModal('editContractModal');
+        try {
+            const type = document.getElementById('editContractType').value; const title = document.getElementById('editContractTitle').value; const date = document.getElementById('editContractDate').value; const sessions = parseInt(document.getElementById('editContractSessions').value); const price = parseInt(document.getElementById('editContractPrice').value);
+            if (!title || !sessions || !price) return alert("請填寫完整資訊");
+            const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === editingContractId);
+            const newUnitPrice = Math.floor(price / sessions); const usedSessions = con.totalSessions - con.remainingSessions;
+            con.type = type; con.title = title; con.purchaseDate = date; con.totalSessions = sessions; con.totalPrice = price; con.unitPrice = newUnitPrice;
+            con.remainingSessions = sessions - usedSessions; con.remainingBalance = price - (usedSessions * newUnitPrice);
+            saveData(); renderContracts(c); hideModal('editContractModal');
+        } catch(e) { alert("修改失敗: " + e.message); }
     }
 
     async function optimizeDatabase() {
@@ -693,6 +701,7 @@
         checkInModal.show(); 
     }
     
+    // V52: Safe Submit CheckIn with Try-Catch
     function submitCheckIn() { 
         if(signaturePad.isEmpty()) return alert('請簽名'); 
         const dIn=document.getElementById('checkInDate').value; 
@@ -706,7 +715,7 @@
             const sigData = getCompressedSignature(signaturePad);
             con.logs.unshift({ date: dStr, amount: con.unitPrice, venueCost: parseInt(document.getElementById('checkInVenueCost').value)||0, signature: sigData }); 
             saveData(); renderContracts(c); hideModal('checkInModal');
-        } catch (e) { alert("操作失敗"); }
+        } catch (e) { alert("操作失敗: " + e.message); }
     }
     
     function clearSignature() { signaturePad.clear(); }
@@ -717,11 +726,27 @@
     function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
-        const dateParts = dIn.split('-'); const now = new Date(); const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`; const dateForTitle = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`;
-        let c=db.clients.find(x=>x.name===n); if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
-        const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
-        const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
-        c.contracts.unshift(con); saveData(); renderClientList(); hideModal('walkInModal');
+        try {
+            const dateParts = dIn.split('-'); const now = new Date(); const dStr = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`; const dateForTitle = `${dateParts[0]}/${dateParts[1]}/${dateParts[2]}`;
+            let c=db.clients.find(x=>x.name===n); if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
+            const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
+            const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
+            c.contracts.unshift(con); saveData(); renderClientList(); hideModal('walkInModal');
+        } catch(e) { alert("操作失敗: " + e.message); }
+    }
+
+    // V52: Fixed Add Contract Logic
+    function addNewClient() { 
+        try {
+            const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); saveData(); renderClientList(); hideModal('addClientModal'); }
+        } catch(e) { alert("新增失敗: " + e.message); }
+    }
+
+    function addNewContract() { 
+        try {
+            const t=document.getElementById('newContractTitle').value, s=+document.getElementById('newContractSessions').value, p=+document.getElementById('newContractPrice').value, type=document.getElementById('newContractType').value, date=document.getElementById('newContractDate').value; 
+            if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); saveData(); renderContracts(c); hideModal('addContractModal'); } else { alert("請填寫完整"); }
+        } catch(e) { alert("新增失敗: " + e.message); }
     }
 
     function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); saveData(); renderContracts(c); } }
@@ -734,9 +759,9 @@
     function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
     function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); saveData(); editClientModal.hide(); showClientList(); } }
 
-    // V51: Robust Render Logic (Calculations FIRST, Chart LAST)
+    // V51/52: Robust Render Logic (Calculations FIRST, Chart LAST)
     function renderReport() {
-        // 1. Calculate Prepaid (Text Only, No Chart Dependency)
+        // 1. Calculate Prepaid
         let tPre = 0;
         try {
             db.clients.forEach(c => c.contracts.forEach(con => {
@@ -750,7 +775,19 @@
         const tbody = document.getElementById('reportTableBody');
         tbody.innerHTML = '';
 
-        // 2. Calculate Stats & Render Table (Text Only, No Chart Dependency)
+        // 2. Render Chart (Isolated in Try-Catch)
+        try {
+            if (typeof Chart === 'undefined') {
+                console.error("Chart.js not loaded");
+                document.getElementById('revenueChart').parentNode.innerHTML = '<div class="text-center text-muted py-5 small">⚠️ 圖表載入失敗 (請檢查網路)</div>';
+            } else {
+                renderTrendChart(y);
+            }
+        } catch (e) {
+            console.error("Chart Render Failed", e);
+        }
+
+        // 3. Render Stats & Table (Guaranteed to run)
         let tRev = 0, tVenue = 0, trRev = 0, boRev = 0, recs = [];
         db.clients.forEach(c => c.contracts.forEach(con => con.logs.forEach(l => {
             const d = new Date(l.date);
@@ -776,19 +813,9 @@
                 tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc > 0 ? '-$' + r.vc : '-'}</td></tr>`;
             });
         }
-
-        // 3. Render Chart (Isolated in Try-Catch)
-        try {
-            renderTrendChart(y);
-        } catch (e) {
-            console.error("Chart Render Failed", e);
-            const container = document.getElementById('revenueChart').parentNode;
-            // Only show error if canvas is empty/broken, otherwise keep old chart or silent fail
-            // container.innerHTML = '<div class="text-center text-muted small py-5">圖表暫時無法顯示</div>'; 
-        }
     }
 
-    // V51: Chart Render Function using Modern v4 Syntax
+    // Chart Render Function using Modern v4 Syntax
     function renderTrendChart(year) {
         if (typeof Chart === 'undefined') return;
 
