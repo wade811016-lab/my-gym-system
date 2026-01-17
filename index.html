@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V53.0 (無限空間版)</title>
+    <title>課程管理系統 V54.0 (日期備份版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     
     <style>
-        /* --- V53.0 Zen Wellness 風格 --- */
+        /* --- V54.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -158,17 +158,16 @@
 </head>
 <body>
 
-<div id="optimizingOverlay">
+<div id="optimizingOverlay" class="d-none">
     <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-    <h4 class="text-dark fw-bold">系統升級中 (V53)</h4>
-    <p class="text-muted">正在將資料搬移至大容量資料庫...</p>
-    <div id="optProgress" class="text-success fw-bold">請勿關閉視窗</div>
+    <h4 class="text-dark fw-bold">系統載入中...</h4>
+    <p class="text-muted">正在準備大容量資料庫</p>
 </div>
 
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V53
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V54
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -314,6 +313,11 @@
     <div id="viewSettings" class="d-none">
         <h4 class="mb-4" style="color: var(--primary-hover);">系統設定</h4>
         
+        <div class="card p-4 mb-4 border-0 shadow-sm" style="background-color: #d1e7dd;">
+            <h5 class="fw-bold mb-2 text-success"><i class="fa-solid fa-database me-2"></i>系統空間狀態</h5>
+            <p class="small text-muted mb-0">已使用 IndexedDB 大容量儲存，空間無憂。</p>
+        </div>
+
         <div class="card p-4 mb-4 border-0" style="background-color: #E3E9E5;">
             <h5 class="fw-bold mb-3" style="color: var(--primary-hover);"><i class="fa-solid fa-copy me-2"></i>文字備份</h5>
             <p class="text-muted small mb-3">最保險的備份方式，請複製代碼並貼在 Line Keep 保存。</p>
@@ -399,13 +403,12 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
-    // V53.0: 引入 IndexedDB 封裝
+    // V54.0: IndexedDB Wrapper + Date-stamped Backup
     const OLD_DB_KEY = 'coach_system_production_data';
     const DB_NAME = 'GymSystemDB_V53';
     const STORE_NAME = 'appData';
     const KEY_ROOT = 'root';
 
-    // IndexedDB Wrapper
     const GymDB = {
         db: null,
         init: function() {
@@ -465,7 +468,6 @@
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal, editContractModal;
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // Init Modals
         addClientModal = new bootstrap.Modal(document.getElementById('addClientModal'));
         editClientModal = new bootstrap.Modal(document.getElementById('editClientModal'));
         addContractModal = new bootstrap.Modal(document.getElementById('addContractModal'));
@@ -475,7 +477,6 @@
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
         editContractModal = new bootstrap.Modal(document.getElementById('editContractModal'));
 
-        // Init Sig Pads
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
@@ -494,28 +495,22 @@
 
         initYearOptions();
 
-        // *** V53: Start Migration & Load Sequence ***
         await GymDB.init();
-        await loadData(); // Modified to handle migration
-        document.getElementById('optimizingOverlay').classList.add('d-none'); // Hide overlay when done
+        await loadData(); 
+        document.getElementById('optimizingOverlay').classList.add('d-none');
         renderClientList();
     });
 
-    // V53: Async Load with Auto-Migration
     async function loadData() {
         try {
-            // 1. Check if Legacy LocalStorage exists
             const legacyData = localStorage.getItem(OLD_DB_KEY);
             
             if (legacyData) {
-                // Migration Logic
                 console.log("Migrating from LocalStorage...");
                 try {
                     const parsed = JSON.parse(legacyData);
                     db = parsed;
-                    // Save to IndexedDB
                     await GymDB.save(db);
-                    // Clear LocalStorage to free up space immediately
                     localStorage.removeItem(OLD_DB_KEY);
                     console.log("Migration Successful.");
                 } catch (e) {
@@ -523,12 +518,10 @@
                     alert("資料搬移失敗，請勿清除瀏覽器資料並聯繫開發者。");
                 }
             } else {
-                // 2. Normal Load from IndexedDB
                 const idbData = await GymDB.load();
                 if (idbData) {
                     db = idbData;
                 } else {
-                    // New User
                     db = { clients: [] };
                     await saveData();
                 }
@@ -539,7 +532,6 @@
         }
     }
 
-    // V53: Async Save
     async function saveData() {
         try {
             await GymDB.save(db);
@@ -560,7 +552,6 @@
         }, 300);
     }
 
-    // ... (View/Render Logic - No Changes) ...
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -590,7 +581,6 @@
 
     function initYearOptions() { const s = document.getElementById('reportYear'); const c = new Date().getFullYear(); s.innerHTML = ''; for (let y = 2025; y <= c + 3; y++) { const o = document.createElement('option'); o.value = y; o.text = y; if(y===c) o.selected=true; s.appendChild(o); } }
     
-    // ... (Detail/Contract Logic) ...
     function hideAll() { ['viewClientList','viewClientDetail','viewReport','viewSettings'].forEach(id => document.getElementById(id).classList.add('d-none')); document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active')); }
     function showClientList() { hideAll(); document.getElementById('viewClientList').classList.remove('d-none'); document.querySelectorAll('.nav-link')[0].classList.add('active'); renderClientList(); }
     function showReportView() { hideAll(); document.getElementById('viewReport').classList.remove('d-none'); document.querySelectorAll('.nav-link')[1].classList.add('active'); renderReport(); }
@@ -644,7 +634,6 @@
         historyModal.show();
     }
 
-    // V53: Async Actions
     async function deleteLog(index) {
         if(!confirm('⚠️ 確定刪除此紀錄？')) return;
         try {
@@ -686,9 +675,7 @@
         } catch(e) { alert("修改失敗: " + e.message); }
     }
 
-    // Optimization is now just "Save to IndexedDB" (which is huge)
     async function optimizeDatabase() {
-        // Redundant but kept for manual triggering if needed
         await saveData();
         alert("資料庫優化完成！目前已使用 IndexedDB 大容量儲存。");
     }
@@ -766,7 +753,6 @@
 
     async function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); await saveData(); renderContracts(c); } }
     
-    // Reset clears both IndexedDB and LocalStorage
     async function resetSystem() { 
         if(confirm('清除所有資料?')) { 
             localStorage.removeItem(OLD_DB_KEY); 
@@ -776,9 +762,21 @@
     }
     
     function copyDataToClipboard() { navigator.clipboard.writeText(JSON.stringify(db)).then(()=>alert('複製成功')).catch(()=>alert('失敗')); }
-    function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(db)); a.download="backup.json"; a.click(); }
     
-    // Async Restore
+    // V54: Date-stamped filename
+    function exportData() { 
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${year}${month}${day}`;
+        
+        const a=document.createElement('a'); 
+        a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(db)); 
+        a.download=`${dateStr}_教練系統備份.json`; 
+        a.click(); 
+    }
+    
     async function restoreFromText() { try { const d=JSON.parse(document.getElementById('restoreTextInput').value); if(d.clients && confirm('還原?')) { db=d; await saveData(); location.reload(); } } catch(e){alert('代碼錯');} }
     function importData() { const f=document.getElementById('importFile').files[0]; if(!f) return; const r=new FileReader(); r.onload=async e=>{try{db=JSON.parse(e.target.result); await saveData(); location.reload();}catch(x){alert('錯誤');}}; r.readAsText(f); }
     
@@ -793,7 +791,6 @@
         editLogModal.show();
     }
 
-    // Chart Render
     function renderReport() {
         let tPre = 0; try { db.clients.forEach(c => c.contracts.forEach(con => { if (con.remainingBalance > 0) tPre += con.remainingBalance; })); } catch(e) {}
         document.getElementById('reportTotalPrepaid').innerText = '$' + tPre.toLocaleString();
