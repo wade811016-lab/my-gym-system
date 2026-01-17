@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V52.0 (穩定重構版)</title>
+    <title>課程管理系統 V53.0 (無限空間版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     
     <style>
-        /* --- V52.0 Zen Wellness 風格 --- */
+        /* --- V53.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -36,7 +36,6 @@
             overscroll-behavior-y: none;
         }
         
-        /* 導覽列 */
         .navbar { 
             background-color: rgba(255, 255, 255, 0.9) !important; 
             backdrop-filter: blur(10px);
@@ -54,7 +53,6 @@
         .nav-link { color: var(--text-muted) !important; font-weight: 500; margin: 0 5px; transition: all 0.3s; }
         .nav-link.active { color: var(--primary-color) !important; background-color: #F0F4F1; border-radius: 15px; }
 
-        /* 卡片設計 */
         .card { 
             background-color: var(--bg-card); 
             border: none; 
@@ -64,11 +62,9 @@
         }
         .hover-shadow:hover { transform: translateY(-3px); }
         
-        /* 文字排版 */
         h4, h5, h6 { color: var(--text-main); font-weight: 700; letter-spacing: 0.5px; }
         .text-muted { color: var(--text-muted) !important; }
 
-        /* 按鈕 */
         .btn { border-radius: var(--btn-radius); padding: 8px 24px; font-weight: 600; border: none; letter-spacing: 0.5px; transition: all 0.3s; }
         .btn-primary { background-color: var(--primary-color); color: #fff; }
         .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
@@ -77,7 +73,6 @@
         .btn-outline-primary { border: 2px solid var(--primary-color); color: var(--primary-color); background: transparent; }
         .btn-outline-primary:hover { background-color: var(--primary-color); color: white; }
 
-        /* 表單 */
         .form-control, .form-select { 
             background-color: #F5F7F6; 
             border: 2px solid transparent; 
@@ -92,25 +87,21 @@
         }
         .input-group-text { background: transparent; border: none; color: var(--primary-color); }
 
-        /* 視圖切換按鈕 */
         .view-btn { border: 1px solid #eee; background: #fff; color: var(--text-muted); border-radius: 12px; }
         .view-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
 
-        /* 狀態標籤 */
         .status-badge { font-size: 0.75rem; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
         .bg-active { background-color: #E3E9E5; color: #52796F; }
         .bg-bone { background-color: #F4ECE8; color: #B5838D; }
         
         .progress { background-color: #F0F0F0; border-radius: 10px; height: 10px !important; }
         
-        /* Modal */
         .modal-content { border-radius: 25px; border: none; box-shadow: 0 20px 60px rgba(47, 62, 70, 0.15); }
         .modal-header { padding: 25px 30px 10px; border: none; }
         .modal-body { padding: 10px 30px 30px; }
         .modal-footer { padding: 0 30px 30px; border: none; }
         .modal-title { color: var(--primary-hover); }
 
-        /* 歷史紀錄裡的簽名圖 */
         .history-sig-img { 
             height: 20px; 
             border: 1px solid #CAD2C5; 
@@ -119,7 +110,6 @@
             vertical-align: middle;
         }
 
-        /* 簽名板 (V44 旋轉自適應) */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
@@ -146,7 +136,6 @@
             overflow: hidden;
         }
         
-        /* 表格 */
         .table thead th { 
             border-bottom: 2px solid var(--accent-soft); 
             color: var(--primary-hover); 
@@ -162,24 +151,24 @@
         
         #optimizingOverlay {
             position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(255,255,255,0.9); z-index: 9999;
+            background: rgba(255,255,255,0.95); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
     </style>
 </head>
 <body>
 
-<div id="optimizingOverlay" class="d-none">
+<div id="optimizingOverlay">
     <div class="spinner-border text-success mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-    <h4 class="text-dark fw-bold">正在優化資料庫...</h4>
-    <p class="text-muted">請勿關閉視窗，這可能需要幾秒鐘</p>
-    <div id="optProgress" class="text-success fw-bold"></div>
+    <h4 class="text-dark fw-bold">系統升級中 (V53)</h4>
+    <p class="text-muted">正在將資料搬移至大容量資料庫...</p>
+    <div id="optProgress" class="text-success fw-bold">請勿關閉視窗</div>
 </div>
 
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V52
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V53
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -325,12 +314,6 @@
     <div id="viewSettings" class="d-none">
         <h4 class="mb-4" style="color: var(--primary-hover);">系統設定</h4>
         
-        <div class="card p-4 mb-4 border-0 shadow-sm" style="background-color: #d1e7dd;">
-            <h5 class="fw-bold mb-2 text-success"><i class="fa-solid fa-broom me-2"></i>系統空間維護</h5>
-            <p class="small text-muted mb-3">如果遇到「無法儲存」或「資料回溯」，請點擊下方按鈕壓縮舊的簽名圖檔。</p>
-            <button class="btn btn-success w-100 fw-bold py-2" onclick="optimizeDatabase()">🚀 執行資料庫瘦身</button>
-        </div>
-
         <div class="card p-4 mb-4 border-0" style="background-color: #E3E9E5;">
             <h5 class="fw-bold mb-3" style="color: var(--primary-hover);"><i class="fa-solid fa-copy me-2"></i>文字備份</h5>
             <p class="text-muted small mb-3">最保險的備份方式，請複製代碼並貼在 Line Keep 保存。</p>
@@ -416,7 +399,63 @@
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
-    const DB_KEY = 'coach_system_production_data';
+    // V53.0: 引入 IndexedDB 封裝
+    const OLD_DB_KEY = 'coach_system_production_data';
+    const DB_NAME = 'GymSystemDB_V53';
+    const STORE_NAME = 'appData';
+    const KEY_ROOT = 'root';
+
+    // IndexedDB Wrapper
+    const GymDB = {
+        db: null,
+        init: function() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = (event) => {
+                    this.db = event.target.result;
+                    resolve();
+                };
+                request.onerror = (event) => {
+                    console.error("IndexedDB error:", event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        },
+        save: function(data) {
+            return new Promise((resolve, reject) => {
+                if (!this.db) return reject("DB not initialized");
+                const transaction = this.db.transaction([STORE_NAME], "readwrite");
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(data, KEY_ROOT);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        },
+        load: function() {
+            return new Promise((resolve, reject) => {
+                if (!this.db) return reject("DB not initialized");
+                const transaction = this.db.transaction([STORE_NAME], "readonly");
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(KEY_ROOT);
+                request.onsuccess = (e) => resolve(e.target.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        },
+        clear: function() {
+            return new Promise((resolve, reject) => {
+                const transaction = this.db.transaction([STORE_NAME], "readwrite");
+                const store = transaction.objectStore(STORE_NAME);
+                store.clear().onsuccess = resolve;
+            });
+        }
+    };
+
     let db = { clients: [] };
     let currentClientId = null, currentContractId = null;
     let editingContractId = null, editingLogIndex = null;
@@ -425,16 +464,8 @@
     let viewMode = 'grid', contractViewMode = 'card';
     let addClientModal, editClientModal, addContractModal, checkInModal, historyModal, walkInModal, editLogModal, editContractModal;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // V52: Reverted to Chart.js 4.4 defaults for stability
-        Chart.defaults.color = '#889696';
-        Chart.defaults.borderColor = '#E8E6E1';
-        Chart.defaults.font.family = '"Noto Sans TC", -apple-system, sans-serif';
-
-        migrateOldData();
-        loadData();
-        
-        // Initialize all modals
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Init Modals
         addClientModal = new bootstrap.Modal(document.getElementById('addClientModal'));
         editClientModal = new bootstrap.Modal(document.getElementById('editClientModal'));
         addContractModal = new bootstrap.Modal(document.getElementById('addContractModal'));
@@ -444,10 +475,10 @@
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
         editContractModal = new bootstrap.Modal(document.getElementById('editContractModal'));
 
+        // Init Sig Pads
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
-        // Rotation & Resize Handlers
         window.addEventListener('resize', () => { setTimeout(handleResize, 300); });
         window.addEventListener('orientationchange', () => { setTimeout(handleResize, 300); });
         
@@ -462,15 +493,65 @@
         });
 
         initYearOptions();
+
+        // *** V53: Start Migration & Load Sequence ***
+        await GymDB.init();
+        await loadData(); // Modified to handle migration
+        document.getElementById('optimizingOverlay').classList.add('d-none'); // Hide overlay when done
         renderClientList();
     });
 
-    // V52 Helper: Robust Modal Hiding
+    // V53: Async Load with Auto-Migration
+    async function loadData() {
+        try {
+            // 1. Check if Legacy LocalStorage exists
+            const legacyData = localStorage.getItem(OLD_DB_KEY);
+            
+            if (legacyData) {
+                // Migration Logic
+                console.log("Migrating from LocalStorage...");
+                try {
+                    const parsed = JSON.parse(legacyData);
+                    db = parsed;
+                    // Save to IndexedDB
+                    await GymDB.save(db);
+                    // Clear LocalStorage to free up space immediately
+                    localStorage.removeItem(OLD_DB_KEY);
+                    console.log("Migration Successful.");
+                } catch (e) {
+                    console.error("Migration failed:", e);
+                    alert("資料搬移失敗，請勿清除瀏覽器資料並聯繫開發者。");
+                }
+            } else {
+                // 2. Normal Load from IndexedDB
+                const idbData = await GymDB.load();
+                if (idbData) {
+                    db = idbData;
+                } else {
+                    // New User
+                    db = { clients: [] };
+                    await saveData();
+                }
+            }
+        } catch (e) {
+            console.error("Load Data Error:", e);
+            alert("讀取資料發生錯誤");
+        }
+    }
+
+    // V53: Async Save
+    async function saveData() {
+        try {
+            await GymDB.save(db);
+        } catch (e) {
+            alert("儲存失敗: " + e.message);
+        }
+    }
+
     function hideModal(id) {
         const el = document.getElementById(id);
         const instance = bootstrap.Modal.getInstance(el);
         if (instance) instance.hide();
-        // Fallback cleanup
         setTimeout(() => {
             document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
             document.body.classList.remove('modal-open');
@@ -479,6 +560,7 @@
         }, 300);
     }
 
+    // ... (View/Render Logic - No Changes) ...
     function switchViewMode(mode) { viewMode = mode; document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid'); document.getElementById('btnViewList').classList.toggle('active', mode === 'list'); renderClientList(); }
     function switchContractView(mode) { contractViewMode = mode; document.getElementById('btnContractCard').classList.toggle('active', mode === 'card'); document.getElementById('btnContractList').classList.toggle('active', mode === 'list'); const client = db.clients.find(x => x.id === currentClientId); if(client) renderContracts(client); }
 
@@ -508,36 +590,7 @@
 
     function initYearOptions() { const s = document.getElementById('reportYear'); const c = new Date().getFullYear(); s.innerHTML = ''; for (let y = 2025; y <= c + 3; y++) { const o = document.createElement('option'); o.value = y; o.text = y; if(y===c) o.selected=true; s.appendChild(o); } }
     
-    function loadData() { 
-        try {
-            const s = localStorage.getItem(DB_KEY); 
-            if (s) {
-                const parsed = JSON.parse(s);
-                if (parsed.clients) db = parsed;
-                else db = { clients: [] };
-            } else if (db.clients.length === 0) { 
-                db.clients.push({ id: Date.now(), name: "範例學員", phone: "", contracts: [] }); 
-                saveData(); 
-            } 
-        } catch (e) {
-            console.error("Load Error", e);
-            alert("讀取資料失敗，請檢查備份");
-        }
-    }
-    
-    function saveData() { 
-        try {
-            localStorage.setItem(DB_KEY, JSON.stringify(db)); 
-        } catch (e) {
-            if (e.name === 'QuotaExceededError') {
-                alert("⚠️ 儲存空間已滿！請立即到「備份資料」頁面執行「資料庫瘦身」。");
-            } else {
-                alert("儲存錯誤: " + e.message);
-            }
-        }
-    }
-    
-    function migrateOldData() { if (!localStorage.getItem(DB_KEY)) { const v4 = localStorage.getItem('gym_system_v4'); const v3 = localStorage.getItem('gym_system_v3'); if(v4) localStorage.setItem(DB_KEY, v4); else if(v3) localStorage.setItem(DB_KEY, v3); } }
+    // ... (Detail/Contract Logic) ...
     function hideAll() { ['viewClientList','viewClientDetail','viewReport','viewSettings'].forEach(id => document.getElementById(id).classList.add('d-none')); document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active')); }
     function showClientList() { hideAll(); document.getElementById('viewClientList').classList.remove('d-none'); document.querySelectorAll('.nav-link')[0].classList.add('active'); renderClientList(); }
     function showReportView() { hideAll(); document.getElementById('viewReport').classList.remove('d-none'); document.querySelectorAll('.nav-link')[1].classList.add('active'); renderReport(); }
@@ -561,9 +614,7 @@
             let table = `<div class="card overflow-hidden"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead style="background-color:#F0F4F1"><tr><th class="ps-4">方案</th><th>進度</th><th>餘額</th><th class="text-end pe-4">操作</th></tr></thead><tbody>`;
             c.contracts.forEach(con => {
                 const active = con.remainingSessions > 0;
-                const type = con.type || 'course';
-                const badge = type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`;
-                const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : badge;
+                const status = !active ? `<span class="badge bg-light text-muted border">結束</span>` : (con.type === 'bone' ? `<span class="status-badge bg-bone">整復</span>` : `<span class="status-badge bg-active">教練</span>`);
                 table += `<tr><td class="ps-4">${status} <span class="fw-bold ms-1" style="font-size:0.9rem">${con.title}</span><div class="small text-muted mt-1">${con.purchaseDate?'<i class="fa-regular fa-calendar me-1"></i>'+con.purchaseDate:''}</div></td><td>${con.remainingSessions} / ${con.totalSessions}</td><td class="small fw-bold">$${con.remainingBalance.toLocaleString()}</td><td class="text-end pe-4"><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openCheckIn(${con.id})" title="扣課" ${!active?'disabled':''}><i class="fa-solid fa-pen-nib text-primary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen text-secondary"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left text-muted"></i></button><button class="btn btn-sm btn-light rounded-circle ms-1" onclick="delContract(${con.id})" title="刪除"><i class="fa-solid fa-trash-can text-danger"></i></button></td></tr>`;
             });
             table += `</tbody></table></div></div>`;
@@ -572,11 +623,9 @@
             c.contracts.forEach(con => {
                 const active = con.remainingSessions > 0;
                 const per = con.totalSessions > 0 ? ((con.totalSessions - con.remainingSessions)/con.totalSessions)*100 : 100;
-                const type = con.type || 'course';
-                const badge = type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`;
-                const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : badge;
+                const status = !active ? `<span class="status-badge bg-light text-muted border me-1">已結束</span>` : (con.type === 'bone' ? `<span class="status-badge bg-bone me-1">傳統整復</span>` : `<span class="status-badge bg-active me-1">教練課程</span>`);
                 const date = con.purchaseDate ? `<span class="small text-muted ms-auto"><i class="fa-regular fa-calendar me-1"></i>${con.purchaseDate}</span>` : '';
-                const progressColor = type==='bone'?'#B5838D':'#52796F';
+                const progressColor = con.type==='bone'?'#B5838D':'#52796F';
                 div.innerHTML += `<div class="card mb-3 p-4 ${!active?'opacity-50':''}"><div class="d-flex align-items-center mb-3"><div>${status}</div>${date}</div><h5 class="fw-bold mb-3" style="color:var(--text-main)">${con.title}</h5><div class="progress mb-3"><div class="progress-bar" style="width:${per}%; background-color:${progressColor};"></div></div><div class="d-flex justify-content-between small text-muted mb-4"><span>剩餘 ${con.remainingSessions}/${con.totalSessions} 堂</span><span class="fw-bold" style="color:var(--primary-hover)">剩餘 $${con.remainingBalance.toLocaleString()}</span></div><div class="d-flex gap-2"><button class="btn btn-primary flex-grow-1 ${!active?'disabled':''}" style="background-color:${active?'var(--primary-color)':'#ccc'}" onclick="openCheckIn(${con.id})">扣課簽名</button><button class="btn btn-outline-primary" onclick="openEditContract(${con.id})" title="編輯"><i class="fa-solid fa-pen"></i></button><button class="btn btn-outline-primary" onclick="openHistory(${con.id})" title="歷史"><i class="fa-solid fa-clock-rotate-left"></i></button><button class="btn btn-link text-danger border-0" onclick="delContract(${con.id})"><i class="fa-solid fa-trash-can"></i></button></div></div>`;
             });
         }
@@ -595,27 +644,18 @@
         historyModal.show();
     }
 
-    // V52: Safe Deletion with Try-Catch
-    function deleteLog(index) {
-        if(!confirm('⚠️ 確定刪除此紀錄？\n\n系統將自動「歸還」扣除的堂數與金額。')) return;
+    // V53: Async Actions
+    async function deleteLog(index) {
+        if(!confirm('⚠️ 確定刪除此紀錄？')) return;
         try {
             const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
             con.remainingSessions += 1; con.remainingBalance += parseInt(log.amount); con.logs.splice(index, 1);
-            saveData(); 
+            await saveData(); 
             openHistory(currentContractId); 
-        } catch(e) {
-            alert('刪除失敗: ' + e.message);
-        }
+        } catch(e) { alert('刪除失敗'); }
     }
 
-    function openEditLog(index) {
-        editingLogIndex = index; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
-        const parts = log.date.split(' '); const ymd = parts[0].replace(/\//g, '-'); const hm = parts[1]; document.getElementById('editLogDate').value = `${ymd}T${hm}`;
-        document.getElementById('editLogAmount').value = log.amount; document.getElementById('editLogVenueCost').value = log.venueCost || 0;
-        editLogModal.show();
-    }
-
-    function submitEditLog() {
+    async function submitEditLog() {
         try {
             const dateInput = document.getElementById('editLogDate').value; const newAmount = parseInt(document.getElementById('editLogAmount').value); const newVenue = parseInt(document.getElementById('editLogVenueCost').value) || 0;
             if(!dateInput || isNaN(newAmount)) return alert("資料錯誤");
@@ -624,7 +664,7 @@
             const d = new Date(dateInput); const dStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
             log.date = dStr; log.amount = newAmount; log.venueCost = newVenue;
             if (!editLogPad.isEmpty()) log.signature = getCompressedSignature(editLogPad);
-            saveData(); renderContracts(c); hideModal('editLogModal'); openHistory(currentContractId);
+            await saveData(); renderContracts(c); hideModal('editLogModal'); openHistory(currentContractId);
         } catch(e) { alert("修改失敗: " + e.message); }
     }
 
@@ -634,7 +674,7 @@
         editContractModal.show();
     }
 
-    function submitEditContract() {
+    async function submitEditContract() {
         try {
             const type = document.getElementById('editContractType').value; const title = document.getElementById('editContractTitle').value; const date = document.getElementById('editContractDate').value; const sessions = parseInt(document.getElementById('editContractSessions').value); const price = parseInt(document.getElementById('editContractPrice').value);
             if (!title || !sessions || !price) return alert("請填寫完整資訊");
@@ -642,38 +682,15 @@
             const newUnitPrice = Math.floor(price / sessions); const usedSessions = con.totalSessions - con.remainingSessions;
             con.type = type; con.title = title; con.purchaseDate = date; con.totalSessions = sessions; con.totalPrice = price; con.unitPrice = newUnitPrice;
             con.remainingSessions = sessions - usedSessions; con.remainingBalance = price - (usedSessions * newUnitPrice);
-            saveData(); renderContracts(c); hideModal('editContractModal');
+            await saveData(); renderContracts(c); hideModal('editContractModal');
         } catch(e) { alert("修改失敗: " + e.message); }
     }
 
+    // Optimization is now just "Save to IndexedDB" (which is huge)
     async function optimizeDatabase() {
-        const overlay = document.getElementById('optimizingOverlay'); overlay.classList.remove('d-none');
-        let count = 0;
-        for (let i = 0; i < db.clients.length; i++) {
-            const client = db.clients[i];
-            for (let j = 0; j < client.contracts.length; j++) {
-                const contract = client.contracts[j];
-                if (contract.logs) {
-                    for (let k = 0; k < contract.logs.length; k++) {
-                        const log = contract.logs[k];
-                        if (log.signature && log.signature.startsWith('data:image/png')) {
-                            try { log.signature = await convertPngToJpg(log.signature); count++; } catch(e) {}
-                        }
-                    }
-                }
-            }
-        }
-        saveData(); overlay.classList.add('d-none'); alert(`優化完成！壓縮了 ${count} 筆資料。`);
-    }
-
-    function convertPngToJpg(pngDataUrl) {
-        return new Promise((resolve, reject) => {
-            const img = new Image(); img.onload = () => {
-                const canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext('2d'); ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/jpeg', 0.5));
-            }; img.onerror = reject; img.src = pngDataUrl;
-        });
+        // Redundant but kept for manual triggering if needed
+        await saveData();
+        alert("資料庫優化完成！目前已使用 IndexedDB 大容量儲存。");
     }
 
     function getCompressedSignature(padInstance) {
@@ -701,8 +718,7 @@
         checkInModal.show(); 
     }
     
-    // V52: Safe Submit CheckIn with Try-Catch
-    function submitCheckIn() { 
+    async function submitCheckIn() { 
         if(signaturePad.isEmpty()) return alert('請簽名'); 
         const dIn=document.getElementById('checkInDate').value; 
         if(!dIn) return alert('選日期'); 
@@ -714,7 +730,7 @@
             con.remainingSessions--; con.remainingBalance-=con.unitPrice; 
             const sigData = getCompressedSignature(signaturePad);
             con.logs.unshift({ date: dStr, amount: con.unitPrice, venueCost: parseInt(document.getElementById('checkInVenueCost').value)||0, signature: sigData }); 
-            saveData(); renderContracts(c); hideModal('checkInModal');
+            await saveData(); renderContracts(c); hideModal('checkInModal');
         } catch (e) { alert("操作失敗: " + e.message); }
     }
     
@@ -723,7 +739,7 @@
 
     function openWalkInModal() { document.getElementById('walkInDate').value = new Date().toISOString().split('T')[0]; document.getElementById('walkInName').value=''; document.getElementById('walkInPrice').value=''; document.getElementById('walkInVenue').value=''; const dl=document.getElementById('clientSuggestions'); dl.innerHTML=''; db.clients.forEach(c=>{const o=document.createElement('option'); o.value=c.name; dl.appendChild(o);}); walkInModal.show(); }
     
-    function submitWalkIn() { 
+    async function submitWalkIn() { 
         const n=document.getElementById('walkInName').value.trim(), p=+document.getElementById('walkInPrice').value, v=+document.getElementById('walkInVenue').value||0, dIn=document.getElementById('walkInDate').value, t=document.getElementById('walkInType').value; 
         if(!n||!p||!dIn) return alert('資料不全'); 
         try {
@@ -731,63 +747,58 @@
             let c=db.clients.find(x=>x.name===n); if(!c) { c={id:Date.now(), name:n, phone:"", contracts:[]}; db.clients.push(c); } 
             const titlePrefix=t==='bone'?'單次整復':'單次教練課'; 
             const con={id:Date.now()+1, title:`${titlePrefix} (${dateForTitle})`, type:t, totalSessions:1, totalPrice:p, unitPrice:p, remainingSessions:0, remainingBalance:0, logs:[{date:dStr, amount:p, venueCost:v, signature:null}]}; 
-            c.contracts.unshift(con); saveData(); renderClientList(); hideModal('walkInModal');
+            c.contracts.unshift(con); await saveData(); renderClientList(); hideModal('walkInModal');
         } catch(e) { alert("操作失敗: " + e.message); }
     }
 
-    // V52: Fixed Add Contract Logic
-    function addNewClient() { 
+    async function addNewClient() { 
         try {
-            const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); saveData(); renderClientList(); hideModal('addClientModal'); }
+            const n=document.getElementById('newClientName').value; if(n){ db.clients.push({id:Date.now(), name:n, phone:document.getElementById('newClientPhone').value, birthday:document.getElementById('newClientBirthday').value, emergencyName:document.getElementById('newClientEmergencyName').value, emergencyPhone:document.getElementById('newClientEmergencyPhone').value, contracts:[]}); await saveData(); renderClientList(); hideModal('addClientModal'); }
         } catch(e) { alert("新增失敗: " + e.message); }
     }
 
-    function addNewContract() { 
+    async function addNewContract() { 
         try {
             const t=document.getElementById('newContractTitle').value, s=+document.getElementById('newContractSessions').value, p=+document.getElementById('newContractPrice').value, type=document.getElementById('newContractType').value, date=document.getElementById('newContractDate').value; 
-            if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); saveData(); renderContracts(c); hideModal('addContractModal'); } else { alert("請填寫完整"); }
+            if(t&&s&&p&&date) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts.unshift({id:Date.now(), title:t, type, totalSessions:s, totalPrice:p, purchaseDate:date, unitPrice:Math.floor(p/s), remainingSessions:s, remainingBalance:p, logs:[]}); await saveData(); renderContracts(c); hideModal('addContractModal'); } else { alert("請填寫完整"); }
         } catch(e) { alert("新增失敗: " + e.message); }
     }
 
-    function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); saveData(); renderContracts(c); } }
-    function resetSystem() { if(confirm('清除所有資料?')) { localStorage.removeItem(DB_KEY); location.reload(); } }
+    async function delContract(id) { if(confirm('刪除?')) { const c=db.clients.find(x=>x.id===currentClientId); c.contracts=c.contracts.filter(x=>x.id!==id); await saveData(); renderContracts(c); } }
+    
+    // Reset clears both IndexedDB and LocalStorage
+    async function resetSystem() { 
+        if(confirm('清除所有資料?')) { 
+            localStorage.removeItem(OLD_DB_KEY); 
+            await GymDB.clear();
+            location.reload(); 
+        } 
+    }
+    
     function copyDataToClipboard() { navigator.clipboard.writeText(JSON.stringify(db)).then(()=>alert('複製成功')).catch(()=>alert('失敗')); }
     function exportData() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(db)); a.download="backup.json"; a.click(); }
-    function restoreFromText() { try { const d=JSON.parse(document.getElementById('restoreTextInput').value); if(d.clients && confirm('還原?')) { db=d; saveData(); location.reload(); } } catch(e){alert('代碼錯');} }
-    function importData() { const f=document.getElementById('importFile').files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{db=JSON.parse(e.target.result); saveData(); location.reload();}catch(x){alert('錯誤');}}; r.readAsText(f); }
+    
+    // Async Restore
+    async function restoreFromText() { try { const d=JSON.parse(document.getElementById('restoreTextInput').value); if(d.clients && confirm('還原?')) { db=d; await saveData(); location.reload(); } } catch(e){alert('代碼錯');} }
+    function importData() { const f=document.getElementById('importFile').files[0]; if(!f) return; const r=new FileReader(); r.onload=async e=>{try{db=JSON.parse(e.target.result); await saveData(); location.reload();}catch(x){alert('錯誤');}}; r.readAsText(f); }
+    
     function openEditClientModal() { const c=db.clients.find(x=>x.id===currentClientId); document.getElementById('editClientName').value=c.name; document.getElementById('editClientPhone').value=c.phone; document.getElementById('editClientBirthday').value=c.birthday||''; document.getElementById('editClientEmergencyName').value=c.emergencyName||''; document.getElementById('editClientEmergencyPhone').value=c.emergencyPhone||''; editClientModal.show(); }
-    function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
-    function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); saveData(); editClientModal.hide(); showClientList(); } }
+    async function saveClientUpdates() { const c=db.clients.find(x=>x.id===currentClientId); c.name=document.getElementById('editClientName').value; c.phone=document.getElementById('editClientPhone').value; c.birthday=document.getElementById('editClientBirthday').value; c.emergencyName=document.getElementById('editClientEmergencyName').value; c.emergencyPhone=document.getElementById('editClientEmergencyPhone').value; await saveData(); showClientDetail(currentClientId); editClientModal.hide(); }
+    async function deleteCurrentClient() { if(confirm('刪除?')) { db.clients=db.clients.filter(x=>x.id!==currentClientId); await saveData(); editClientModal.hide(); showClientList(); } }
 
-    // V51/52: Robust Render Logic (Calculations FIRST, Chart LAST)
+    function openEditLog(index) {
+        editingLogIndex = index; const c = db.clients.find(x => x.id === currentClientId); const con = c.contracts.find(x => x.id === currentContractId); const log = con.logs[index];
+        const parts = log.date.split(' '); const ymd = parts[0].replace(/\//g, '-'); const hm = parts[1]; document.getElementById('editLogDate').value = `${ymd}T${hm}`;
+        document.getElementById('editLogAmount').value = log.amount; document.getElementById('editLogVenueCost').value = log.venueCost || 0;
+        editLogModal.show();
+    }
+
+    // Chart Render
     function renderReport() {
-        // 1. Calculate Prepaid
-        let tPre = 0;
-        try {
-            db.clients.forEach(c => c.contracts.forEach(con => {
-                if (con.remainingBalance > 0) tPre += con.remainingBalance;
-            }));
-        } catch(e) { console.error(e); }
+        let tPre = 0; try { db.clients.forEach(c => c.contracts.forEach(con => { if (con.remainingBalance > 0) tPre += con.remainingBalance; })); } catch(e) {}
         document.getElementById('reportTotalPrepaid').innerText = '$' + tPre.toLocaleString();
-
-        const y = document.getElementById('reportYear').value;
-        const m = document.getElementById('reportMonth').value;
-        const tbody = document.getElementById('reportTableBody');
-        tbody.innerHTML = '';
-
-        // 2. Render Chart (Isolated in Try-Catch)
-        try {
-            if (typeof Chart === 'undefined') {
-                console.error("Chart.js not loaded");
-                document.getElementById('revenueChart').parentNode.innerHTML = '<div class="text-center text-muted py-5 small">⚠️ 圖表載入失敗 (請檢查網路)</div>';
-            } else {
-                renderTrendChart(y);
-            }
-        } catch (e) {
-            console.error("Chart Render Failed", e);
-        }
-
-        // 3. Render Stats & Table (Guaranteed to run)
+        const y = document.getElementById('reportYear').value; const m = document.getElementById('reportMonth').value; const tbody = document.getElementById('reportTableBody'); tbody.innerHTML = '';
+        try { if (typeof Chart === 'undefined') { document.getElementById('revenueChart').parentNode.innerHTML = '載入失敗'; } else { renderTrendChart(y); } } catch (e) {}
         let tRev = 0, tVenue = 0, trRev = 0, boRev = 0, recs = [];
         db.clients.forEach(c => c.contracts.forEach(con => con.logs.forEach(l => {
             const d = new Date(l.date);
@@ -797,105 +808,19 @@
                 recs.push({ d: l.date, n: c.name, a: l.amount, vc: l.venueCost || 0, type: type });
             }
         })));
-
-        document.getElementById('reportTotalRevenue').innerText = '$' + tRev.toLocaleString();
-        document.getElementById('reportTotalVenueCost').innerText = '$' + tVenue.toLocaleString();
-        document.getElementById('reportNetIncome').innerText = '$' + (tRev - tVenue).toLocaleString();
-        document.getElementById('reportTrainingRev').innerText = '$' + trRev.toLocaleString();
-        document.getElementById('reportBoneRev').innerText = '$' + boRev.toLocaleString();
-
+        document.getElementById('reportTotalRevenue').innerText = '$' + tRev.toLocaleString(); document.getElementById('reportTotalVenueCost').innerText = '$' + tVenue.toLocaleString(); document.getElementById('reportNetIncome').innerText = '$' + (tRev - tVenue).toLocaleString(); document.getElementById('reportTrainingRev').innerText = '$' + trRev.toLocaleString(); document.getElementById('reportBoneRev').innerText = '$' + boRev.toLocaleString();
         if (recs.length === 0) document.getElementById('reportEmptyState').classList.remove('d-none');
-        else {
-            document.getElementById('reportEmptyState').classList.add('d-none');
-            recs.sort((a, b) => new Date(b.d) - new Date(a.d)).forEach(r => {
-                const itemText = r.type === 'bone' ? '<span style="color:#B5838D;font-weight:600">傳統整復</span>' : '<span style="color:#52796F;font-weight:600">教練課程</span>';
-                const dateOnly = r.d.split(' ')[0];
-                tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc > 0 ? '-$' + r.vc : '-'}</td></tr>`;
-            });
-        }
+        else { document.getElementById('reportEmptyState').classList.add('d-none'); recs.sort((a, b) => new Date(b.d) - new Date(a.d)).forEach(r => { const itemText = r.type === 'bone' ? '<span style="color:#B5838D;font-weight:600">傳統整復</span>' : '<span style="color:#52796F;font-weight:600">教練課程</span>'; const dateOnly = r.d.split(' ')[0]; tbody.innerHTML += `<tr><td class="ps-4 text-muted">${dateOnly}</td><td class="fw-bold" style="color:var(--text-main)">${r.n}</td><td>${itemText}</td><td class="text-end fw-bold">+$${r.a}</td><td class="text-end pe-4 text-danger small">${r.vc > 0 ? '-$' + r.vc : '-'}</td></tr>`; }); }
     }
 
-    // Chart Render Function using Modern v4 Syntax
     function renderTrendChart(year) {
         if (typeof Chart === 'undefined') return;
-
         const ctx = document.getElementById('revenueChart').getContext('2d');
         const labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
-        const trainData = new Array(12).fill(0); 
-        const boneData = new Array(12).fill(0);
-
-        db.clients.forEach(c => { 
-            c.contracts.forEach(con => { 
-                const type = con.type || 'course'; 
-                con.logs.forEach(log => { 
-                    const d = new Date(log.date); 
-                    if (d.getFullYear() == year) { 
-                        const month = d.getMonth(); 
-                        if (type === 'bone') { boneData[month] += parseInt(log.amount); } 
-                        else { trainData[month] += parseInt(log.amount); } 
-                    } 
-                }); 
-            }); 
-        });
-
+        const trainData = new Array(12).fill(0); const boneData = new Array(12).fill(0);
+        db.clients.forEach(c => { c.contracts.forEach(con => { const type = con.type || 'course'; con.logs.forEach(log => { const d = new Date(log.date); if (d.getFullYear() == year) { const month = d.getMonth(); if (type === 'bone') { boneData[month] += parseInt(log.amount); } else { trainData[month] += parseInt(log.amount); } } }); }); });
         if (revenueChart) { revenueChart.destroy(); }
-
-        revenueChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { 
-                        label: '教練課程', 
-                        data: trainData, 
-                        borderColor: '#52796F', 
-                        backgroundColor: '#52796F', 
-                        tension: 0.4, 
-                        borderWidth: 3, 
-                        pointRadius: 4, 
-                        pointBackgroundColor: '#fff', 
-                        pointBorderWidth: 2 
-                    },
-                    { 
-                        label: '傳統整復', 
-                        data: boneData, 
-                        borderColor: '#B5838D', 
-                        backgroundColor: '#B5838D', 
-                        tension: 0.4, 
-                        borderWidth: 3, 
-                        pointRadius: 4, 
-                        pointBackgroundColor: '#fff', 
-                        pointBorderWidth: 2 
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#E8E6E1', drawBorder: false }, 
-                        ticks: { color: '#889696' } 
-                    }, 
-                    x: { 
-                        grid: { display: false }, 
-                        ticks: { color: '#889696' } 
-                    } 
-                }, 
-                interaction: { mode: 'index', intersect: false },
-                plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            usePointStyle: true, 
-                            padding: 20,
-                            font: { family: '"Noto Sans TC"' } 
-                        } 
-                    } 
-                } 
-            }
-        });
+        revenueChart = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [ { label: '教練課程', data: trainData, borderColor: '#52796F', backgroundColor: '#52796F', tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2 }, { label: '傳統整復', data: boneData, borderColor: '#B5838D', backgroundColor: '#B5838D', tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderWidth: 2 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#E8E6E1', drawBorder: false }, ticks: { color: '#889696' } }, x: { grid: { display: false }, ticks: { color: '#889696' } } }, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { family: '"Noto Sans TC"' } } } } } });
     }
 </script>
 </body>
