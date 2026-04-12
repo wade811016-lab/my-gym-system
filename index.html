@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>課程管理系統 V55.0 (雙棲精準版)</title>
+    <title>課程管理系統 V56.0 (觸控精準版)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     
     <style>
-        /* --- V55.0 Zen Wellness 風格 --- */
+        /* --- V56.0 Zen Wellness 風格 --- */
         :root {
             --bg-main: #F9F7F2;       
             --bg-card: #FFFFFF;       
@@ -110,23 +110,16 @@
             vertical-align: middle;
         }
 
-        /* V55 簽名板容器：預設尺寸與觸控防護 */
+        /* V56 簽名板容器：取消高度限制，保留防滑動 */
         .signature-pad-wrapper {
             border: 2px dashed #CAD2C5;
             border-radius: 15px;
             background-color: #fff;
-            height: 260px;
+            height: 260px; /* 固定大高度，不隨橫式縮減 */
             width: 100%;
             position: relative;
             overflow: hidden;
             touch-action: none;
-        }
-
-        /* V55 橫向自適應：當手機轉為橫向，高度自動縮減以適應螢幕，防止滑動干擾 */
-        @media (max-height: 500px) {
-            .signature-pad-wrapper {
-                height: 180px; 
-            }
         }
         
         canvas { 
@@ -175,7 +168,7 @@
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="#" onclick="showClientList()">
-            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V55
+            <i class="fa-solid fa-dumbbell me-2"></i>教練系統 V56
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -391,7 +384,13 @@
 
 <div class="modal fade" id="checkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold" style="color: var(--primary-hover);">確認扣課</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body pt-2">
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="date" class="form-control" id="checkInDate"></div>
-    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder=""></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p><div class="signature-pad-wrapper mb-2"><canvas id="signatureCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
+    <div class="mb-4"><label class="form-label text-muted small">場租費用</label><input type="number" class="form-control" id="checkInVenueCost" placeholder=""></div><div class="d-flex justify-content-between align-items-center p-3 mb-3 rounded-3" style="background-color: #F0F4F1;"><span>本次扣款</span><strong id="modalDeductAmount" class="fs-5" style="color: var(--primary-hover);">$0</strong></div><p class="mb-2 small text-muted">學員簽名</p>
+    
+    <div class="signature-pad-wrapper mb-2" id="checkInPadWrapper">
+        <canvas id="signatureCanvas"></canvas>
+    </div>
+    
+    <button class="btn btn-sm btn-light w-100 text-muted" onclick="clearSignature()">重新簽名</button></div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitCheckIn()">確認扣款</button></div></div></div></div>
 
 <div class="modal fade" id="walkInModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-dialog-centered"><div class="modal-content border-0"><div class="modal-header bg-warning text-white"><h5 class="modal-title fw-bold text-white"><i class="fa-solid fa-bolt me-2"></i>單次速記</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
     <div class="mb-3"><label class="form-label fw-bold text-dark">服務類型</label><select class="form-select" id="walkInType"><option value="course" selected>教練課程</option><option value="bone">傳統整復</option></select></div>
@@ -404,16 +403,22 @@
     <div class="mb-3"><label class="form-label text-muted small">上課日期</label><input type="datetime-local" class="form-control" id="editLogDate"></div>
     <div class="row"><div class="col-6 mb-3"><label class="form-label text-muted small">扣款金額</label><input type="number" class="form-control" id="editLogAmount"></div><div class="col-6 mb-3"><label class="form-label text-muted small">場租支出</label><input type="number" class="form-control" id="editLogVenueCost"></div></div>
     <div class="alert alert-light small py-2 mb-2 text-warning border-0"><i class="fa-solid fa-circle-exclamation me-1"></i>修改金額將自動調整合約餘額。</div>
-    <p class="mb-2 small text-muted">重簽名 (選填)</p><div class="signature-pad-wrapper mb-2" style="height: 260px;"><canvas id="editLogCanvas"></canvas></div><button class="btn btn-sm btn-light w-100 text-muted" onclick="clearEditLogSig()">重新簽名</button>
+    <p class="mb-2 small text-muted">重簽名 (選填)</p>
+    
+    <div class="signature-pad-wrapper mb-2" id="editLogPadWrapper">
+        <canvas id="editLogCanvas"></canvas>
+    </div>
+    
+    <button class="btn btn-sm btn-light w-100 text-muted" onclick="clearEditLogSig()">重新簽名</button>
 </div><div class="modal-footer border-0"><button type="button" class="btn btn-primary w-100 py-2" onclick="submitEditLog()">儲存變更</button></div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
-    // V55.0: IndexedDB Wrapper
+    // DB Wrapper
     const OLD_DB_KEY = 'coach_system_production_data';
-    const DB_NAME = 'GymSystemDB_V53'; // 保持同一個資料庫名稱，以讀取現有資料
+    const DB_NAME = 'GymSystemDB_V53'; 
     const STORE_NAME = 'appData';
     const KEY_ROOT = 'root';
 
@@ -485,26 +490,23 @@
         editLogModal = new bootstrap.Modal(document.getElementById('editLogModal'));
         editContractModal = new bootstrap.Modal(document.getElementById('editContractModal'));
 
+        // Init Pads
         signaturePad = new SignaturePad(document.getElementById('signatureCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
         editLogPad = new SignaturePad(document.getElementById('editLogCanvas'), { minWidth: 1, maxWidth: 3, penColor: "#2F3E46" });
 
-        // V55: 加入先進的 ResizeObserver，能精準捕捉任何畫面變化與旋轉
-        const resizeObserver = new ResizeObserver(() => {
-            requestAnimationFrame(() => {
-                handleResize();
-            });
-        });
-        
-        // 監聽兩個簽名板的容器
-        document.querySelectorAll('.signature-pad-wrapper').forEach(wrapper => {
-            resizeObserver.observe(wrapper);
-        });
+        // V56: Debounced Resize Handling (Delay to wait for browser reflow)
+        let resizeTimer;
+        const delayedResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(handleResize, 500); // Wait 0.5s for UI to settle
+        };
 
-        // 保留原有的事件作為雙重保險
-        window.addEventListener('orientationchange', () => { setTimeout(handleResize, 300); });
-        document.getElementById('checkInModal').addEventListener('shown.bs.modal', handleResize);
+        window.addEventListener('resize', delayedResize);
+        window.addEventListener('orientationchange', delayedResize);
+        
+        document.getElementById('checkInModal').addEventListener('shown.bs.modal', delayedResize);
         document.getElementById('checkInModal').addEventListener('hidden.bs.modal', clearSignature);
-        document.getElementById('editLogModal').addEventListener('shown.bs.modal', handleResize);
+        document.getElementById('editLogModal').addEventListener('shown.bs.modal', delayedResize);
         document.getElementById('editLogModal').addEventListener('hidden.bs.modal', () => { editLogPad.clear(); });
 
         document.getElementById('addContractModal').addEventListener('show.bs.modal', function () {
@@ -701,28 +703,28 @@
         } catch(e) { alert("修改失敗: " + e.message); }
     }
 
-    // V55: 筆跡保留與精準重置技術
+    // V56: Advanced Resize Handling for Context Retention
     function handleResize() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         
         const canvas1 = document.getElementById('signatureCanvas');
         if(canvas1 && canvas1.offsetParent) { 
-            const data = signaturePad.toData(); // 記住目前的筆跡
+            const data1 = signaturePad.toData(); // 備份筆跡
             canvas1.width = canvas1.offsetWidth * ratio; 
             canvas1.height = canvas1.offsetHeight * ratio; 
             canvas1.getContext("2d").scale(ratio, ratio); 
             signaturePad.clear();
-            if(data && data.length > 0) signaturePad.fromData(data); // 貼回筆跡
+            if(data1 && data1.length > 0) signaturePad.fromData(data1); // 還原筆跡
         }
         
         const canvas2 = document.getElementById('editLogCanvas');
         if(canvas2 && canvas2.offsetParent) { 
-            const data = editLogPad.toData(); // 記住目前的筆跡
+            const data2 = editLogPad.toData(); 
             canvas2.width = canvas2.offsetWidth * ratio; 
             canvas2.height = canvas2.offsetHeight * ratio; 
             canvas2.getContext("2d").scale(ratio, ratio); 
             editLogPad.clear();
-            if(data && data.length > 0) editLogPad.fromData(data); // 貼回筆跡
+            if(data2 && data2.length > 0) editLogPad.fromData(data2);
         }
     }
 
@@ -832,7 +834,7 @@
 
         try {
             if (typeof Chart === 'undefined') {
-                document.getElementById('revenueChart').parentNode.innerHTML = '<div class="text-center text-muted py-5 small">⚠️ 圖表載入失敗</div>';
+                document.getElementById('revenueChart').parentNode.innerHTML = '<div class="text-center text-muted py-5 small">⚠️ 圖表載入失敗 (請檢查網路)</div>';
             } else {
                 renderTrendChart(y);
             }
